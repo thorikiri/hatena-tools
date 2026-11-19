@@ -1,4 +1,5 @@
 import { HatenaFetchClient } from './http/fetch-client.js';
+import { HatenaBlogClient } from './services/blog.js';
 import { HatenaUserClient } from './services/user.js';
 import type { HatenaClientOptions, HatenaRequestOptions } from './types.js';
 
@@ -11,9 +12,19 @@ export class HatenaClient {
   /** ユーザー情報 API クライアント */
   public readonly user: HatenaUserClient;
 
+  /** はてなブログ AtomPub API クライアント */
+  public readonly blog: HatenaBlogClient;
+
   constructor(options: HatenaClientOptions) {
     this.http = new HatenaFetchClient(options);
     this.user = new HatenaUserClient(this.http);
+    const defaultHatenaId =
+      options.hatenaId ??
+      (options.auth.type === 'wsse' ? options.auth.hatenaId : undefined);
+    this.blog = new HatenaBlogClient(this.http, {
+      hatenaId: defaultHatenaId,
+      blogId: options.blogId,
+    });
   }
 
   /**

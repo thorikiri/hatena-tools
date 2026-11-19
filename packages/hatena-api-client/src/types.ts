@@ -29,6 +29,10 @@ export type HatenaAuthConfig = HatenaOAuth1Credentials | HatenaWsseCredentials;
 export interface HatenaClientOptions {
   /** 認証設定（OAuth 1.0a または WSSE） */
   auth: HatenaAuthConfig;
+  /** デフォルトのはてなID（WSSEの場合はauth.hatenaIdをフォールバックとして使用） */
+  hatenaId?: string;
+  /** デフォルトのはてなブログID（例: example.hatenablog.com） */
+  blogId?: string;
   /** デフォルトのタイムアウト時間（ミリ秒）。デフォルトは 15000ms */
   timeoutMs?: number;
   /** カスタム fetch 実装（テストや特殊ランタイム向け） */
@@ -77,4 +81,98 @@ export interface HatenaUser {
   urlName: string;
   /** 表示名（display_name） */
   displayName: string;
+}
+
+/**
+ * はてなブログの記事フォーマット
+ */
+export type HatenaBlogFormat = 'markdown' | 'html' | 'hatena';
+
+/**
+ * はてなブログのエントリ種別
+ */
+export type HatenaBlogEntryType = 'post' | 'page';
+
+/**
+ * はてなブログの公開状態
+ */
+export type HatenaBlogEntryStatus = 'published' | 'draft' | 'scheduled';
+
+/**
+ * はてなブログの記事 / 固定ページ情報
+ */
+export interface HatenaBlogEntry {
+  entryId: string;
+  type: HatenaBlogEntryType;
+  title: string;
+  content: string;
+  format: HatenaBlogFormat;
+  status: HatenaBlogEntryStatus;
+  externalUrl: string | null;
+  previewUrl: string | null;
+  editUrl: string | null;
+  customUrl: string | null;
+  categories: string[];
+  publishedAt: Date;
+}
+
+/**
+ * はてなブログの一覧フィード結果
+ */
+export interface HatenaBlogFeed {
+  nextUrl: string | null;
+  entries: HatenaBlogEntry[];
+}
+
+/**
+ * Atom Entry XML ビルドオプション
+ */
+export interface BuildHatenaEntryXmlOptions {
+  title: string;
+  content: string;
+  format?: HatenaBlogFormat;
+  categories?: string[];
+  updated?: Date;
+  draft?: boolean;
+  scheduled?: boolean;
+  preview?: boolean;
+  customUrl?: string | null;
+}
+
+/**
+ * はてなブログ API 呼び出し時の共通ターゲット指定
+ */
+export interface HatenaBlogTargetOptions {
+  hatenaId?: string;
+  blogId?: string;
+}
+
+/**
+ * 記事・固定ページ一覧取得オプション
+ */
+export interface GetHatenaBlogEntriesOptions extends HatenaBlogTargetOptions {
+  nextUrl?: string | null;
+}
+
+/**
+ * 記事・固定ページ作成オプション
+ */
+export interface CreateHatenaBlogEntryOptions
+  extends HatenaBlogTargetOptions,
+    BuildHatenaEntryXmlOptions {}
+
+/**
+ * 記事更新オプション
+ */
+export interface UpdateHatenaBlogEntryOptions
+  extends CreateHatenaBlogEntryOptions {
+  entryId: string;
+}
+
+/**
+ * 固定ページ更新オプション
+ */
+export interface UpdateHatenaBlogPageOptions
+  extends CreateHatenaBlogEntryOptions {
+  pageId: string;
 }

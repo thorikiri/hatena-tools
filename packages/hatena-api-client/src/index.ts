@@ -24,9 +24,28 @@ export {
 } from './errors.js';
 export { HatenaFetchClient } from './http/fetch-client.js';
 export { validateAllowedHatenaUrl } from './http/url-validator.js';
+export {
+  HatenaBlogClient,
+  type HatenaBlogClientDefaults,
+} from './services/blog.js';
+export {
+  buildHatenaEntryXml,
+  parseHatenaCategoriesXml,
+  parseHatenaEntriesFeedXml,
+  parseHatenaEntryXml,
+} from './services/blog-xml.js';
 export { HatenaUserClient } from './services/user.js';
 export type {
+  BuildHatenaEntryXmlOptions,
+  CreateHatenaBlogEntryOptions,
+  GetHatenaBlogEntriesOptions,
   HatenaAuthConfig,
+  HatenaBlogEntry,
+  HatenaBlogEntryStatus,
+  HatenaBlogEntryType,
+  HatenaBlogFeed,
+  HatenaBlogFormat,
+  HatenaBlogTargetOptions,
   HatenaClientOptions,
   HatenaOAuth1Credentials,
   HatenaOAuthScope,
@@ -34,4 +53,6 @@ export type {
   HatenaUser,
   HatenaWsseCredentials,
   HttpMethod,
+  UpdateHatenaBlogEntryOptions,
+  UpdateHatenaBlogPageOptions,
 } from './types.js';
