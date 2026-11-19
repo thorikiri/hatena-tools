@@ -176,3 +176,59 @@ export interface UpdateHatenaBlogPageOptions
   extends CreateHatenaBlogEntryOptions {
   pageId: string;
 }
+
+/**
+ * はてなブックマーク情報（REST API）
+ */
+export interface HatenaBookmark {
+  url: string;
+  comment: string;
+  tags: string[];
+  eid?: string;
+  createdDatetime?: string;
+  permalink?: string;
+}
+
+/**
+ * はてなブックマーク作成・更新オプション
+ */
+export interface AddHatenaBookmarkOptions {
+  url: string;
+  comment?: string;
+  tags?: string[];
+}
+
+/**
+ * はてなブックマークのタグ情報
+ */
+export interface HatenaBookmarkTag {
+  tag: string;
+  count: number;
+}
+
+/**
+ * はてなブックマーク ホットエントリーのカテゴリ
+ */
+export type HatenaBookmarkHotEntryCategory =
+  | 'all'
+  | 'general'
+  | 'social'
+  | 'economics'
+  | 'life'
+  | 'knowledge'
+  | 'it'
+  | 'fun'
+  | 'entertainment'
+  | 'game';
+
+/**
+ * はてなブックマーク RSS 1.0 (RDF) アイテム
+ */
+export interface HatenaBookmarkRssItem {
+  title: string;
+  url: string;
+  comment: string;
+  tags: string[];
+  bookmarkCount?: number;
+  date: Date;
+}

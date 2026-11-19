@@ -1,5 +1,6 @@
 import { HatenaFetchClient } from './http/fetch-client.js';
 import { HatenaBlogClient } from './services/blog.js';
+import { HatenaBookmarkClient } from './services/bookmark.js';
 import { HatenaUserClient } from './services/user.js';
 import type { HatenaClientOptions, HatenaRequestOptions } from './types.js';
 
@@ -15,6 +16,9 @@ export class HatenaClient {
   /** はてなブログ AtomPub API クライアント */
   public readonly blog: HatenaBlogClient;
 
+  /** はてなブックマーク API クライアント */
+  public readonly bookmark: HatenaBookmarkClient;
+
   constructor(options: HatenaClientOptions) {
     this.http = new HatenaFetchClient(options);
     this.user = new HatenaUserClient(this.http);
@@ -24,6 +28,11 @@ export class HatenaClient {
     this.blog = new HatenaBlogClient(this.http, {
       hatenaId: defaultHatenaId,
       blogId: options.blogId,
+    });
+    this.bookmark = new HatenaBookmarkClient(this.http, {
+      hatenaId: defaultHatenaId,
+      timeoutMs: options.timeoutMs,
+      fetch: options.fetch,
     });
   }
 
