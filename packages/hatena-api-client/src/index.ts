@@ -33,6 +33,7 @@ export {
   parseHatenaCategoriesXml,
   parseHatenaEntriesFeedXml,
   parseHatenaEntryXml,
+  parseHatenaServiceDocumentXml,
 } from './services/blog-xml.js';
 export {
   HatenaBookmarkClient,
@@ -62,11 +63,13 @@ export type {
   GetHatenaBlogEntriesOptions,
   GetHatenaProfileImageOptions,
   HatenaAuthConfig,
+  HatenaBlogCollection,
   HatenaBlogEntry,
   HatenaBlogEntryStatus,
   HatenaBlogEntryType,
   HatenaBlogFeed,
   HatenaBlogFormat,
+  HatenaBlogServiceDocument,
   HatenaBlogTargetOptions,
   HatenaBookmark,
   HatenaBookmarkHotEntryCategory,

@@ -1,16 +1,19 @@
 import type {
   BuildHatenaEntryXmlOptions,
+  HatenaBlogCollection,
   HatenaBlogEntry,
   HatenaBlogEntryStatus,
   HatenaBlogEntryType,
   HatenaBlogFeed,
   HatenaBlogFormat,
+  HatenaBlogServiceDocument,
 } from '../types.js';
 import {
   escapeXml,
   findAllDescendants,
   findChild,
   findChildren,
+  getInnerXml,
   parseXml,
   type XmlElement,
 } from '../xml/simple-xml.js';
@@ -79,6 +82,13 @@ function extractBasenameFromUrl(
   }
 }
 
+function parseOptionalDate(raw?: string): Date | null {
+  const trimmed = raw?.trim();
+  if (!trimmed) return null;
+  const parsed = new Date(trimmed);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
 function parseEntryElement(
   el: XmlElement,
   entryType: HatenaBlogEntryType,
@@ -87,6 +97,15 @@ function parseEntryElement(
   const contentEl = findChild(el, 'content');
   const content = contentEl?.text ?? '';
   const format = mapContentTypeToFormat(contentEl?.attributes.type);
+
+  const formattedContentEl = findChild(el, 'formatted-content');
+  const formattedContent = formattedContentEl
+    ? getInnerXml(formattedContentEl).trim() || null
+    : null;
+  const summary = findChild(el, 'summary')?.text.trim() || null;
+  const authorEl = findChild(el, 'author');
+  const author =
+    (authorEl ? findChild(authorEl, 'name')?.text.trim() : undefined) || null;
 
   const draftEl = findAllDescendants(el, 'draft')[0];
   const isDraft = draftEl?.text.trim().toLowerCase() === 'yes';
@@ -135,19 +154,21 @@ function parseEntryElement(
     if (term) categorySet.add(term);
   }
 
-  const publishedStr =
-    findChild(el, 'published')?.text.trim() ||
-    findChild(el, 'updated')?.text.trim();
-  const parsedDate = publishedStr ? new Date(publishedStr) : new Date();
-  const publishedAt = Number.isNaN(parsedDate.getTime())
-    ? new Date()
-    : parsedDate;
+  const updatedAt = parseOptionalDate(findChild(el, 'updated')?.text);
+  const editedAt = parseOptionalDate(findChild(el, 'edited')?.text);
+  const publishedAt =
+    parseOptionalDate(findChild(el, 'published')?.text) ??
+    updatedAt ??
+    new Date();
 
   return {
     entryId,
     type: entryType,
     title,
     content,
+    formattedContent,
+    summary,
+    author,
     format,
     status,
     externalUrl,
@@ -156,6 +177,8 @@ function parseEntryElement(
     customUrl,
     categories: Array.from(categorySet),
     publishedAt,
+    updatedAt,
+    editedAt,
   };
 }
 
@@ -169,26 +192,32 @@ export function parseHatenaEntriesFeedXml(
   const root = parseXml(xml);
   const entryType: HatenaBlogEntryType = options?.type ?? 'post';
   if (!root) {
-    return { nextUrl: null, entries: [] };
+    return { title: null, blogUrl: null, nextUrl: null, entries: [] };
   }
 
   if (root.localName === 'entry') {
     return {
+      title: null,
+      blogUrl: null,
       nextUrl: null,
       entries: [parseEntryElement(root, entryType)],
     };
   }
 
-  const nextLink = findChildren(root, 'link').find(
-    (l) => l.attributes.rel === 'next',
+  const feedTitle = findChild(root, 'title')?.text.trim() || null;
+  const feedLinks = findChildren(root, 'link');
+  const blogUrl = sanitizeHttpUrl(
+    feedLinks.find((l) => l.attributes.rel === 'alternate')?.attributes.href,
   );
-  const nextUrl = sanitizeHttpUrl(nextLink?.attributes.href);
+  const nextUrl = sanitizeHttpUrl(
+    feedLinks.find((l) => l.attributes.rel === 'next')?.attributes.href,
+  );
 
   const entries = findChildren(root, 'entry').map((el) =>
     parseEntryElement(el, entryType),
   );
 
-  return { nextUrl, entries };
+  return { title: feedTitle, blogUrl, nextUrl, entries };
 }
 
 /**
@@ -215,6 +244,51 @@ export function parseHatenaCategoriesXml(xml: string): string[] {
     if (term) names.add(term);
   }
   return Array.from(names);
+}
+
+/**
+ * はてなブログ AtomPub のサービス文書 XML（GET /atom）をパースする
+ */
+export function parseHatenaServiceDocumentXml(
+  xml: string,
+): HatenaBlogServiceDocument {
+  const root = parseXml(xml);
+  if (!root) {
+    return { workspaceTitle: null, collections: [] };
+  }
+
+  const workspaceEl =
+    root.localName === 'workspace' ? root : findChild(root, 'workspace');
+  if (!workspaceEl) {
+    return { workspaceTitle: null, collections: [] };
+  }
+
+  const workspaceTitle = findChild(workspaceEl, 'title')?.text.trim() || null;
+
+  const collections: HatenaBlogCollection[] = findChildren(
+    workspaceEl,
+    'collection',
+  )
+    .map((col) => {
+      const href = col.attributes.href?.trim() ?? '';
+      const title = findChild(col, 'title')?.text.trim() || null;
+      const accepts = findChildren(col, 'accept')
+        .map((a) => a.text.trim())
+        .filter(Boolean);
+      const categoriesEl = findChild(col, 'categories');
+      const categoriesHref =
+        sanitizeHttpUrl(categoriesEl?.attributes.href) ?? null;
+
+      return {
+        href,
+        title,
+        accepts,
+        categoriesHref,
+      };
+    })
+    .filter((c) => Boolean(c.href));
+
+  return { workspaceTitle, collections };
 }
 
 /**

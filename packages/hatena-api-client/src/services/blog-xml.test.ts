@@ -4,6 +4,7 @@ import {
   parseHatenaCategoriesXml,
   parseHatenaEntriesFeedXml,
   parseHatenaEntryXml,
+  parseHatenaServiceDocumentXml,
 } from './blog-xml.js';
 
 describe('blog-xml', () => {
@@ -35,18 +36,25 @@ describe('blog-xml', () => {
     expect(xml).toContain('<app:preview>yes</app:preview>');
   });
 
-  it('parseHatenaEntriesFeedXml がフィード一覧と nextUrl をパースすること', () => {
+  it('parseHatenaEntriesFeedXml がフィード一覧と nextUrl・メタ情報・補助フィールドをパースすること', () => {
     const xml = `<?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom" xmlns:app="http://www.w3.org/2007/app" xmlns:hatenablog="http://www.hatena.ne.jp/info/xmlns#hatenablog">
+<feed xmlns="http://www.w3.org/2005/Atom" xmlns:app="http://www.w3.org/2007/app" xmlns:hatenablog="http://www.hatena.ne.jp/info/xmlns#hatenablog" xmlns:hatena="http://www.hatena.ne.jp/info/xmlns#">
+  <title>たろうのブログ</title>
+  <link rel="alternate" href="https://taro.hatenablog.com/" />
   <link rel="next" href="https://blog.hatena.ne.jp/taro/taro.hatenablog.com/atom/entry?page=2" />
   <entry>
     <id>tag:blog.hatena.ne.jp,2013:blog-1-2</id>
     <link rel="edit" href="https://blog.hatena.ne.jp/taro/taro.hatenablog.com/atom/entry/12345" />
     <link rel="alternate" type="text/html" href="https://taro.hatenablog.com/entry/my-post" />
     <link rel="preview" type="text/html" href="https://blog.hatena.ne.jp/-/preview/abc" />
+    <author><name>taro</name></author>
     <title>公開記事</title>
+    <summary type="text">記事の要約</summary>
     <content type="text/x-markdown">本文</content>
+    <hatena:formatted-content type="text/html"><div class="section"><p>本文</p></div></hatena:formatted-content>
     <published>2026-11-19T10:00:00+09:00</published>
+    <updated>2026-11-19T10:05:00+09:00</updated>
+    <app:edited>2026-11-19T10:10:00+09:00</app:edited>
     <category term="日記" />
     <app:control>
       <app:draft>no</app:draft>
@@ -65,6 +73,8 @@ describe('blog-xml', () => {
 </feed>`;
 
     const feed = parseHatenaEntriesFeedXml(xml);
+    expect(feed.title).toBe('たろうのブログ');
+    expect(feed.blogUrl).toBe('https://taro.hatenablog.com/');
     expect(feed.nextUrl).toBe(
       'https://blog.hatena.ne.jp/taro/taro.hatenablog.com/atom/entry?page=2',
     );
@@ -74,12 +84,17 @@ describe('blog-xml', () => {
       type: 'post',
       title: '公開記事',
       content: '本文',
+      formattedContent: '<div class="section"><p>本文</p></div>',
+      summary: '記事の要約',
+      author: 'taro',
       format: 'markdown',
       status: 'published',
       externalUrl: 'https://taro.hatenablog.com/entry/my-post',
       previewUrl: 'https://blog.hatena.ne.jp/-/preview/abc',
       customUrl: 'my-post',
       categories: ['日記'],
+      updatedAt: new Date('2026-11-19T10:05:00+09:00'),
+      editedAt: new Date('2026-11-19T10:10:00+09:00'),
     });
     expect(feed.entries[1]).toMatchObject({
       entryId: '67890',
@@ -123,5 +138,32 @@ describe('blog-xml', () => {
 </app:categories>`;
 
     expect(parseHatenaCategoriesXml(xml)).toEqual(['Tech', '日記']);
+  });
+
+  it('parseHatenaServiceDocumentXml がサービス文書をパースすること', () => {
+    const xml = `<?xml version="1.0" encoding="utf-8"?>
+<service xmlns="http://www.w3.org/2007/app" xmlns:atom="http://www.w3.org/2005/Atom">
+  <workspace>
+    <atom:title>たろうのブログ</atom:title>
+    <collection href="https://blog.hatena.ne.jp/taro/taro.hatenablog.com/atom/entry">
+      <atom:title>たろうのブログ</atom:title>
+      <accept>application/atom+xml;type=entry</accept>
+      <categories href="https://blog.hatena.ne.jp/taro/taro.hatenablog.com/atom/category" />
+    </collection>
+  </workspace>
+</service>`;
+
+    expect(parseHatenaServiceDocumentXml(xml)).toEqual({
+      workspaceTitle: 'たろうのブログ',
+      collections: [
+        {
+          href: 'https://blog.hatena.ne.jp/taro/taro.hatenablog.com/atom/entry',
+          title: 'たろうのブログ',
+          accepts: ['application/atom+xml;type=entry'],
+          categoriesHref:
+            'https://blog.hatena.ne.jp/taro/taro.hatenablog.com/atom/category',
+        },
+      ],
+    });
   });
 });
