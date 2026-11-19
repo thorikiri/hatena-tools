@@ -34,8 +34,14 @@ export {
   parseHatenaEntriesFeedXml,
   parseHatenaEntryXml,
 } from './services/blog-xml.js';
+export {
+  HatenaBookmarkClient,
+  type HatenaBookmarkClientOptions,
+} from './services/bookmark.js';
+export { parseHatenaBookmarkRssXml } from './services/bookmark-rss.js';
 export { HatenaUserClient } from './services/user.js';
 export type {
+  AddHatenaBookmarkOptions,
   BuildHatenaEntryXmlOptions,
   CreateHatenaBlogEntryOptions,
   GetHatenaBlogEntriesOptions,
@@ -46,6 +52,10 @@ export type {
   HatenaBlogFeed,
   HatenaBlogFormat,
   HatenaBlogTargetOptions,
+  HatenaBookmark,
+  HatenaBookmarkHotEntryCategory,
+  HatenaBookmarkRssItem,
+  HatenaBookmarkTag,
   HatenaClientOptions,
   HatenaOAuth1Credentials,
   HatenaOAuthScope,
