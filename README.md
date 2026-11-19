@@ -30,7 +30,7 @@ hatena-tools/
 
 ## 動作要件
 
-- Node.js 18 以上
+- Node.js 22 以上
 - npm（npm workspaces を使用）
 
 ## 開発コマンド
