@@ -48,13 +48,18 @@ export {
   parseFotolifeEntryXml,
   parseFotolifeFeedXml,
 } from './services/fotolife-xml.js';
-export { HatenaUserClient } from './services/user.js';
+export {
+  getHatenaProfileImageUrl,
+  HatenaUserClient,
+  type HatenaUserClientOptions,
+} from './services/user.js';
 export type {
   AddHatenaBookmarkOptions,
   BuildHatenaEntryXmlOptions,
   CreateHatenaBlogEntryOptions,
   DeleteFotolifePhotoOptions,
   GetHatenaBlogEntriesOptions,
+  GetHatenaProfileImageOptions,
   HatenaAuthConfig,
   HatenaBlogEntry,
   HatenaBlogEntryStatus,
@@ -71,6 +76,8 @@ export type {
   HatenaFotolifePhoto,
   HatenaOAuth1Credentials,
   HatenaOAuthScope,
+  HatenaProfileImageResult,
+  HatenaProfileImageSize,
   HatenaRequestOptions,
   HatenaUser,
   HatenaWsseCredentials,
