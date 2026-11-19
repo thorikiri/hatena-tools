@@ -442,6 +442,63 @@ export interface GetHatenaBookmarkFavoriteFeedOptions {
 }
 
 /**
+ * はてなスター ブログカウント API レスポンス
+ */
+export interface HatenaStarBlogCount {
+  title: string;
+  uri: string;
+  starCount: number;
+  count: Record<string, number>;
+}
+
+/**
+ * はてなスター 個別スター情報
+ */
+export interface HatenaStarItem {
+  name: string;
+  quote: string;
+  count: number;
+}
+
+/**
+ * はてなスター カラースターグループ
+ */
+export interface HatenaStarColoredGroup {
+  color: string;
+  stars: HatenaStarItem[];
+}
+
+/**
+ * はてなスター エントリ情報（/entry.json）
+ */
+export interface HatenaStarEntry {
+  uri: string;
+  stars: HatenaStarItem[];
+  coloredStars: HatenaStarColoredGroup[];
+}
+
+/**
+ * はてなスター 画像 API オプション
+ */
+export interface HatenaStarImageOptions {
+  uri: string;
+  /** 背景色（#RRGGBB 形式） */
+  bg?: string;
+  /** 倍サイズ（q=1）を取得するかどうか */
+  large?: boolean;
+}
+
+/**
+ * はてなスター 画像 API レスポンス
+ */
+export interface HatenaStarCountImageResult {
+  url: string;
+  contentType: string;
+  data: Uint8Array;
+  starCounts: Record<string, number>;
+}
+
+/**
  * はてなフォトライフの写真情報
  */
 export interface HatenaFotolifePhoto {
