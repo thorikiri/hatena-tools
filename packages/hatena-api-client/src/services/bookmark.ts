@@ -6,10 +6,17 @@ import {
 import type { HatenaFetchClient } from '../http/fetch-client.js';
 import type {
   AddHatenaBookmarkOptions,
+  GetHatenaBookmarkFavoriteFeedOptions,
+  GetHatenaBookmarkMyFeedOptions,
   HatenaBookmark,
+  HatenaBookmarkCommentOEmbed,
   HatenaBookmarkEntry,
   HatenaBookmarkHotEntryCategory,
+  HatenaBookmarkPublicEntry,
+  HatenaBookmarkPublicFetchOptions,
   HatenaBookmarkRssItem,
+  HatenaBookmarkSearchOptions,
+  HatenaBookmarkSearchResult,
   HatenaBookmarkTag,
   HatenaBookmarkUserInfo,
 } from '../types.js';
@@ -17,6 +24,14 @@ import { parseHatenaBookmarkRssXml } from './bookmark-rss.js';
 
 const BOOKMARK_REST_ROOT = 'https://bookmark.hatenaapis.com/rest/1';
 const BOOKMARK_REST_BASE = `${BOOKMARK_REST_ROOT}/my`;
+const BOOKMARK_COUNT_SINGLE_URL = 'https://bookmark.hatenaapis.com/count/entry';
+const BOOKMARK_COUNT_MULTI_URL =
+  'https://bookmark.hatenaapis.com/count/entries';
+const BOOKMARK_ENTRY_JSON_BASE = 'https://b.hatena.ne.jp/entry/json/';
+const BOOKMARK_ENTRY_JSONLITE_BASE = 'https://b.hatena.ne.jp/entry/jsonlite/';
+const BOOKMARK_OEMBED_URL = 'https://b.hatena.ne.jp/api/oembed';
+const BOOKMARK_SEARCH_URL = 'https://b.hatena.ne.jp/my/search/json';
+const MAX_COUNT_URLS = 50;
 const DEFAULT_TIMEOUT_MS = 15_000;
 
 const ALLOWED_HOTENTRY_CATEGORIES = new Set<string>([
@@ -67,6 +82,42 @@ interface RawBookmarkTagsResponse {
   tags?: Array<{ tag: string; count: number }>;
 }
 
+interface RawPublicEntryResponse {
+  title?: string;
+  count?: number | string;
+  url?: string;
+  entry_url?: string;
+  screenshot?: string;
+  eid?: string | number;
+  bookmarks?: Array<{
+    user?: string;
+    tags?: string[];
+    timestamp?: string;
+    comment?: string;
+  }>;
+  related?: Array<{
+    title?: string;
+    count?: number | string;
+    url?: string;
+    entry_url?: string;
+    eid?: string | number;
+  }>;
+}
+
+interface RawCommentOEmbedResponse {
+  version?: string;
+  type?: string;
+  title?: string;
+  url?: string;
+  html?: string;
+  width?: string | number;
+  height?: string | number;
+  author_name?: string;
+  author_url?: string;
+  provider_name?: string;
+  provider_url?: string;
+}
+
 export interface HatenaBookmarkClientOptions {
   hatenaId?: string;
   timeoutMs?: number;
@@ -106,22 +157,217 @@ function mapRawBookmark(raw: RawBookmarkResponse): HatenaBookmark {
   };
 }
 
+async function fetchPublicText(
+  url: string,
+  options?: HatenaBookmarkPublicFetchOptions,
+): Promise<string> {
+  const fetchImpl = options?.fetch ?? globalThis.fetch;
+  const timeoutMs = options?.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+
+  let response: Response;
+  try {
+    response = await fetchImpl(url, {
+      method: 'GET',
+      signal: AbortSignal.timeout(timeoutMs),
+    });
+  } catch (error) {
+    if (isTimeoutError(error)) {
+      throw new HatenaApiError(
+        'はてなブックマーク API への接続がタイムアウトしました',
+        { code: 'TIMEOUT', cause: error },
+      );
+    }
+    throw new HatenaApiError('はてなブックマーク API への通信に失敗しました', {
+      code: 'NETWORK_ERROR',
+      cause: error,
+    });
+  }
+
+  const text = await response.text();
+  if (!response.ok) {
+    throw new HatenaApiError(
+      `はてなブックマーク API がエラーを返しました (HTTP ${response.status})`,
+      {
+        code: statusToErrorCode(response.status),
+        status: response.status,
+        responseBody: text,
+      },
+    );
+  }
+
+  return text;
+}
+
 /**
- * はてなブックマーク API クライアント（REST API & 公開 RSS フィード）
+ * 指定 URL のはてなブックマーク件数を取得する（認証不要）
+ */
+export async function fetchHatenaBookmarkCount(
+  url: string,
+  options?: HatenaBookmarkPublicFetchOptions,
+): Promise<number> {
+  const trimmed = url.trim();
+  if (!trimmed) {
+    throw new HatenaApiError('対象 URL が指定されていません。', {
+      code: 'API_ERROR',
+    });
+  }
+  const endpoint = `${BOOKMARK_COUNT_SINGLE_URL}?url=${encodeURIComponent(trimmed)}`;
+  const text = await fetchPublicText(endpoint, options);
+  const count = Number.parseInt(text.trim(), 10);
+  return Number.isNaN(count) ? 0 : count;
+}
+
+/**
+ * 複数 URL（最大 50 件）のはてなブックマーク件数を一括取得する（認証不要）
+ */
+export async function fetchHatenaBookmarkCounts(
+  urls: string[],
+  options?: HatenaBookmarkPublicFetchOptions,
+): Promise<Record<string, number>> {
+  const normalized = urls.map((u) => u.trim()).filter(Boolean);
+  if (normalized.length === 0) {
+    return {};
+  }
+  if (normalized.length > MAX_COUNT_URLS) {
+    throw new HatenaApiError(
+      `一度に指定できる URL は最大 ${MAX_COUNT_URLS} 件までです。`,
+      { code: 'API_ERROR' },
+    );
+  }
+
+  const query = normalized.map((u) => `url=${encodeURIComponent(u)}`).join('&');
+  const endpoint = `${BOOKMARK_COUNT_MULTI_URL}?${query}`;
+  const text = await fetchPublicText(endpoint, options);
+  return JSON.parse(text) as Record<string, number>;
+}
+
+/**
+ * 指定 URL のはてなブックマークエントリー情報・コメント一覧を取得する（認証不要）
+ */
+export async function fetchHatenaBookmarkEntryInfo(
+  url: string,
+  options?: HatenaBookmarkPublicFetchOptions & { lite?: boolean },
+): Promise<HatenaBookmarkPublicEntry | null> {
+  const trimmed = url.trim();
+  if (!trimmed) {
+    throw new HatenaApiError('対象 URL が指定されていません。', {
+      code: 'API_ERROR',
+    });
+  }
+
+  const base = options?.lite
+    ? BOOKMARK_ENTRY_JSONLITE_BASE
+    : BOOKMARK_ENTRY_JSON_BASE;
+  const escapedUrl = trimmed.replace(/#/g, '%23');
+  const endpoint = `${base}${escapedUrl}`;
+
+  let text: string;
+  try {
+    text = await fetchPublicText(endpoint, options);
+  } catch (error) {
+    if (error instanceof HatenaApiError && error.code === 'NOT_FOUND') {
+      return null;
+    }
+    throw error;
+  }
+
+  const parsed = JSON.parse(text) as RawPublicEntryResponse | null;
+  if (!parsed) {
+    return null;
+  }
+
+  return {
+    title: parsed.title ?? '',
+    count: toOptionalNumber(parsed.count) ?? 0,
+    url: parsed.url ?? trimmed,
+    entryUrl: parsed.entry_url ?? '',
+    screenshot: parsed.screenshot ?? '',
+    eid: String(parsed.eid ?? ''),
+    bookmarks: Array.isArray(parsed.bookmarks)
+      ? parsed.bookmarks.map((b) => ({
+          user: b.user ?? '',
+          tags: Array.isArray(b.tags) ? b.tags : [],
+          timestamp: b.timestamp ?? '',
+          comment: b.comment ?? '',
+        }))
+      : [],
+    ...(Array.isArray(parsed.related)
+      ? {
+          related: parsed.related.map((r) => ({
+            title: r.title ?? '',
+            count: toOptionalNumber(r.count) ?? 0,
+            url: r.url ?? '',
+            entryUrl: r.entry_url ?? '',
+            eid: String(r.eid ?? ''),
+          })),
+        }
+      : {}),
+  };
+}
+
+/**
+ * はてなブックマークコメントの oEmbed 情報を取得する（認証不要）
+ */
+export async function fetchHatenaBookmarkCommentOEmbed(
+  url: string,
+  options?: HatenaBookmarkPublicFetchOptions,
+): Promise<HatenaBookmarkCommentOEmbed> {
+  const trimmed = url.trim();
+  if (!trimmed) {
+    throw new HatenaApiError('対象のコメント URL が指定されていません。', {
+      code: 'API_ERROR',
+    });
+  }
+
+  const endpoint = `${BOOKMARK_OEMBED_URL}?url=${encodeURIComponent(trimmed)}&format=json`;
+  const text = await fetchPublicText(endpoint, options);
+  const data = JSON.parse(text) as RawCommentOEmbedResponse;
+
+  return {
+    version: data.version ?? '1.0',
+    type: data.type ?? 'rich',
+    title: data.title ?? '',
+    url: data.url ?? trimmed,
+    html: data.html ?? '',
+    width: String(data.width ?? '100%'),
+    height: String(data.height ?? '160px'),
+    authorName: data.author_name ?? '',
+    authorUrl: data.author_url ?? '',
+    providerName: data.provider_name ?? 'Hatena Bookmark',
+    providerUrl: data.provider_url ?? 'https://b.hatena.ne.jp/',
+  };
+}
+
+/**
+ * はてなブックマーク API クライアント（REST API / 公開 API / 検索 / RSS フィード）
  */
 export class HatenaBookmarkClient {
   private readonly defaultHatenaId?: string;
-  private readonly timeoutMs: number;
-  private readonly fetchImpl: typeof globalThis.fetch;
+  private readonly publicFetchOptions: HatenaBookmarkPublicFetchOptions;
 
   constructor(
     private readonly http: HatenaFetchClient,
     options: HatenaBookmarkClientOptions = {},
   ) {
     this.defaultHatenaId = options.hatenaId;
-    this.timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
-    this.fetchImpl = options.fetch ?? globalThis.fetch;
+    this.publicFetchOptions = {
+      timeoutMs: options.timeoutMs ?? DEFAULT_TIMEOUT_MS,
+      fetch: options.fetch,
+    };
   }
+
+  private resolveHatenaId(explicit?: string): string {
+    const hatenaId = (explicit ?? this.defaultHatenaId ?? '').trim();
+    if (!hatenaId) {
+      throw new HatenaApiError(
+        'hatenaId が指定されていません。HatenaClient の初期化時またはメソッド引数で指定してください。',
+        { code: 'API_ERROR' },
+      );
+    }
+    return hatenaId;
+  }
+
+  // --- REST API（OAuth 1.0a 認証） ---
 
   /**
    * 指定 URL のブックマーク状態を取得する（未登録の場合は null）
@@ -261,22 +507,112 @@ export class HatenaBookmarkClient {
     };
   }
 
+  // --- 全文検索 API ---
+
   /**
-   * ユーザーの公開ブックマーク RSS 1.0 フィードを取得する
+   * マイブックマークを全文検索する（GET https://b.hatena.ne.jp/my/search/json）
    */
-  public async getMyFeed(options?: {
-    hatenaId?: string;
-  }): Promise<HatenaBookmarkRssItem[]> {
-    const hatenaId = (options?.hatenaId ?? this.defaultHatenaId ?? '').trim();
-    if (!hatenaId) {
+  public searchMyBookmarks(
+    options: HatenaBookmarkSearchOptions,
+  ): Promise<HatenaBookmarkSearchResult> {
+    const params = new URLSearchParams({ q: options.q });
+    if (options.of !== undefined) {
+      params.set('of', String(options.of));
+    }
+    if (options.limit !== undefined) {
+      params.set('limit', String(options.limit));
+    }
+
+    return this.http.requestJson<HatenaBookmarkSearchResult>({
+      url: `${BOOKMARK_SEARCH_URL}?${params.toString()}`,
+      method: 'GET',
+    });
+  }
+
+  // --- 公開 API（認証不要） ---
+
+  /**
+   * 指定 URL のブックマーク件数を取得する
+   */
+  public getCount(options: { url: string }): Promise<number> {
+    return fetchHatenaBookmarkCount(options.url, this.publicFetchOptions);
+  }
+
+  /**
+   * 複数 URL（最大 50 件）のブックマーク件数を一括取得する
+   */
+  public getCounts(options: {
+    urls: string[];
+  }): Promise<Record<string, number>> {
+    return fetchHatenaBookmarkCounts(options.urls, this.publicFetchOptions);
+  }
+
+  /**
+   * 指定 URL の公開エントリー情報・コメント一覧を取得する
+   */
+  public getPublicEntry(options: {
+    url: string;
+    lite?: boolean;
+  }): Promise<HatenaBookmarkPublicEntry | null> {
+    return fetchHatenaBookmarkEntryInfo(options.url, {
+      ...this.publicFetchOptions,
+      lite: options.lite,
+    });
+  }
+
+  /**
+   * ブックマークコメントの oEmbed 情報を取得する
+   */
+  public getCommentOEmbed(options: {
+    url: string;
+  }): Promise<HatenaBookmarkCommentOEmbed> {
+    return fetchHatenaBookmarkCommentOEmbed(
+      options.url,
+      this.publicFetchOptions,
+    );
+  }
+
+  // --- 公開 RSS 1.0 (RDF) フィード ---
+
+  /**
+   * ユーザーの公開ブックマーク RSS 1.0 フィードを取得する（ページング・絞り込み対応）
+   */
+  public async getMyFeed(
+    options?: GetHatenaBookmarkMyFeedOptions,
+  ): Promise<HatenaBookmarkRssItem[]> {
+    const hatenaId = this.resolveHatenaId(options?.hatenaId);
+    const params = new URLSearchParams();
+    if (options?.page !== undefined) params.set('page', String(options.page));
+    if (options?.tag) params.set('tag', options.tag);
+    if (options?.q) params.set('q', options.q);
+    if (options?.date) params.set('date', options.date);
+    if (options?.url) params.set('url', options.url);
+
+    const query = params.toString();
+    const rssUrl = `https://b.hatena.ne.jp/${encodeURIComponent(hatenaId)}/rss${query ? `?${query}` : ''}`;
+    const xml = await fetchPublicText(rssUrl, this.publicFetchOptions);
+    return parseHatenaBookmarkRssXml(xml);
+  }
+
+  /**
+   * お気に入りユーザーのブックマーク RSS 1.0 フィードを取得する
+   */
+  public async getFavoriteFeed(
+    options: GetHatenaBookmarkFavoriteFeedOptions,
+  ): Promise<HatenaBookmarkRssItem[]> {
+    const hatenaId = this.resolveHatenaId(options.hatenaId);
+    const key = options.key.trim();
+    if (!key) {
       throw new HatenaApiError(
-        'hatenaId が指定されていません。HatenaClient の初期化時またはメソッド引数で指定してください。',
-        { code: 'API_ERROR' },
+        'お気に入りフィードの key が指定されていません。',
+        {
+          code: 'API_ERROR',
+        },
       );
     }
 
-    const rssUrl = `https://b.hatena.ne.jp/${encodeURIComponent(hatenaId)}/rss`;
-    const xml = await this.fetchPublicText(rssUrl);
+    const rssUrl = `https://b.hatena.ne.jp/${encodeURIComponent(hatenaId)}/favorite.rss?key=${encodeURIComponent(key)}`;
+    const xml = await fetchPublicText(rssUrl, this.publicFetchOptions);
     return parseHatenaBookmarkRssXml(xml);
   }
 
@@ -296,42 +632,7 @@ export class HatenaBookmarkClient {
       rssUrl = `https://b.hatena.ne.jp/hotentry/${encodeURIComponent(category)}.rss`;
     }
 
-    const xml = await this.fetchPublicText(rssUrl);
+    const xml = await fetchPublicText(rssUrl, this.publicFetchOptions);
     return parseHatenaBookmarkRssXml(xml);
-  }
-
-  private async fetchPublicText(url: string): Promise<string> {
-    let response: Response;
-    try {
-      response = await this.fetchImpl(url, {
-        method: 'GET',
-        signal: AbortSignal.timeout(this.timeoutMs),
-      });
-    } catch (error) {
-      if (isTimeoutError(error)) {
-        throw new HatenaApiError(
-          'はてなブックマーク RSS への接続がタイムアウトしました',
-          { code: 'TIMEOUT', cause: error },
-        );
-      }
-      throw new HatenaApiError(
-        'はてなブックマーク RSS への通信に失敗しました',
-        { code: 'NETWORK_ERROR', cause: error },
-      );
-    }
-
-    const text = await response.text();
-    if (!response.ok) {
-      throw new HatenaApiError(
-        `はてなブックマーク RSS がエラーを返しました (HTTP ${response.status})`,
-        {
-          code: statusToErrorCode(response.status),
-          status: response.status,
-          responseBody: text,
-        },
-      );
-    }
-
-    return text;
   }
 }
