@@ -39,11 +39,21 @@ export {
   type HatenaBookmarkClientOptions,
 } from './services/bookmark.js';
 export { parseHatenaBookmarkRssXml } from './services/bookmark-rss.js';
+export {
+  HatenaFotolifeClient,
+  resolveFotolifeEditUrl,
+} from './services/fotolife.js';
+export {
+  buildFotolifeUploadXml,
+  parseFotolifeEntryXml,
+  parseFotolifeFeedXml,
+} from './services/fotolife-xml.js';
 export { HatenaUserClient } from './services/user.js';
 export type {
   AddHatenaBookmarkOptions,
   BuildHatenaEntryXmlOptions,
   CreateHatenaBlogEntryOptions,
+  DeleteFotolifePhotoOptions,
   GetHatenaBlogEntriesOptions,
   HatenaAuthConfig,
   HatenaBlogEntry,
@@ -57,6 +67,8 @@ export type {
   HatenaBookmarkRssItem,
   HatenaBookmarkTag,
   HatenaClientOptions,
+  HatenaFotolifeFeed,
+  HatenaFotolifePhoto,
   HatenaOAuth1Credentials,
   HatenaOAuthScope,
   HatenaRequestOptions,
@@ -65,4 +77,5 @@ export type {
   HttpMethod,
   UpdateHatenaBlogEntryOptions,
   UpdateHatenaBlogPageOptions,
+  UploadFotolifePhotoOptions,
 } from './types.js';

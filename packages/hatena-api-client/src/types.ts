@@ -232,3 +232,48 @@ export interface HatenaBookmarkRssItem {
   bookmarkCount?: number;
   date: Date;
 }
+
+/**
+ * はてなフォトライフの写真情報
+ */
+export interface HatenaFotolifePhoto {
+  photoId: string;
+  title: string;
+  imageUrl: string | null;
+  syntax: string | null;
+  editUrl: string | null;
+  hatenaUser: string | null;
+  issued: Date | null;
+}
+
+/**
+ * はてなフォトライフの写真一覧フィード結果
+ */
+export interface HatenaFotolifeFeed {
+  hatenaUser: string | null;
+  photos: HatenaFotolifePhoto[];
+}
+
+/**
+ * はてなフォトライフ画像アップロードオプション
+ */
+export interface UploadFotolifePhotoOptions {
+  /** 画像バイナリ（Node.js の Buffer も Uint8Array として渡せます） */
+  file: Uint8Array | ArrayBuffer;
+  /** 画像タイトル（ファイル名など） */
+  title: string;
+  /** MIME タイプ（デフォルト: "image/jpeg"） */
+  contentType?: string;
+  /** 保存先フォルダ名（<dc:subject>） */
+  folder?: string;
+}
+
+/**
+ * はてなフォトライフ画像削除オプション
+ */
+export interface DeleteFotolifePhotoOptions {
+  photoId?: string;
+  editUrl?: string;
+  syntax?: string;
+  imageUrl?: string;
+}
