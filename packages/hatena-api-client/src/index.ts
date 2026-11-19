@@ -25,6 +25,7 @@ export {
 export { HatenaFetchClient } from './http/fetch-client.js';
 export { validateAllowedHatenaUrl } from './http/url-validator.js';
 export {
+  fetchHatenaBlogOEmbed,
   HatenaBlogClient,
   type HatenaBlogClientDefaults,
 } from './services/blog.js';
@@ -60,6 +61,7 @@ export type {
   BuildHatenaEntryXmlOptions,
   CreateHatenaBlogEntryOptions,
   DeleteFotolifePhotoOptions,
+  FetchHatenaBlogOEmbedOptions,
   GetHatenaBlogEntriesOptions,
   GetHatenaProfileImageOptions,
   HatenaAuthConfig,
@@ -69,6 +71,7 @@ export type {
   HatenaBlogEntryType,
   HatenaBlogFeed,
   HatenaBlogFormat,
+  HatenaBlogOEmbed,
   HatenaBlogServiceDocument,
   HatenaBlogTargetOptions,
   HatenaBookmark,

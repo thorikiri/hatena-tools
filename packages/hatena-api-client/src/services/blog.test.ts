@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { HatenaClient } from '../client.js';
 import { HatenaApiError } from '../errors.js';
+import { fetchHatenaBlogOEmbed } from './blog.js';
 
 const ENTRY_RESPONSE_XML = `<?xml version="1.0" encoding="utf-8"?>
 <entry xmlns="http://www.w3.org/2005/Atom" xmlns:app="http://www.w3.org/2007/app">
@@ -194,5 +195,72 @@ describe('HatenaBlogClient', () => {
     expect(fetchMock.mock.calls[0]?.[0]).toBe(
       'https://blog.hatena.ne.jp/taro/taro.hatenablog.com/atom',
     );
+  });
+
+  it('getOEmbed と fetchHatenaBlogOEmbed が oEmbed 情報を取得できること', async () => {
+    const oembedPayload = {
+      version: '1.0',
+      type: 'rich',
+      title: 'テスト記事',
+      url: 'https://staff.hatenablog.com/entry/2014/08/29/141633',
+      description: '記事の概要',
+      html: '<iframe src="https://hatenablog-parts.com/embed"></iframe>',
+      width: '100%',
+      height: '190',
+      image_url: 'https://example.com/thumb.png',
+      categories: ['Tech', 'News'],
+      blog_title: '開発ブログ',
+      blog_url: 'https://staff.hatenablog.com/',
+      author_name: 'hatenablog',
+      author_url: 'https://blog.hatena.ne.jp/hatenablog/',
+      provider_name: 'Hatena Blog',
+      provider_url: 'https://hatena.blog',
+      published: '2014-08-29 14:16:33',
+    };
+
+    const fetchMock = vi
+      .fn<typeof globalThis.fetch>()
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify(oembedPayload), { status: 200 }),
+      )
+      .mockResolvedValueOnce(new Response('Not Found', { status: 404 }));
+
+    const client = createClient(fetchMock);
+    const result = await client.blog.getOEmbed({
+      url: 'https://staff.hatenablog.com/entry/2014/08/29/141633',
+    });
+
+    expect(result).toEqual({
+      version: '1.0',
+      type: 'rich',
+      title: 'テスト記事',
+      url: 'https://staff.hatenablog.com/entry/2014/08/29/141633',
+      description: '記事の概要',
+      html: '<iframe src="https://hatenablog-parts.com/embed"></iframe>',
+      width: '100%',
+      height: '190',
+      imageUrl: 'https://example.com/thumb.png',
+      categories: ['Tech', 'News'],
+      blogTitle: '開発ブログ',
+      blogUrl: 'https://staff.hatenablog.com/',
+      authorName: 'hatenablog',
+      authorUrl: 'https://blog.hatena.ne.jp/hatenablog/',
+      providerName: 'Hatena Blog',
+      providerUrl: 'https://hatena.blog',
+      published: '2014-08-29 14:16:33',
+    });
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(
+      'https://hatena.blog/oembed?url=https%3A%2F%2Fstaff.hatenablog.com%2Fentry%2F2014%2F08%2F29%2F141633&format=json',
+    );
+
+    await expect(
+      fetchHatenaBlogOEmbed('https://example.com/missing', {
+        fetch: fetchMock,
+      }),
+    ).rejects.toMatchObject({
+      name: 'HatenaApiError',
+      code: 'NOT_FOUND',
+      status: 404,
+    });
   });
 });

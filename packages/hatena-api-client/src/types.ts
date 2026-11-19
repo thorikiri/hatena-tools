@@ -150,6 +150,37 @@ export interface HatenaBlogServiceDocument {
 }
 
 /**
+ * はてなブログ oEmbed API レスポンス
+ */
+export interface HatenaBlogOEmbed {
+  version: string;
+  type: string;
+  title: string;
+  url: string;
+  description: string;
+  html: string;
+  width: string;
+  height: string;
+  imageUrl: string | null;
+  categories: string[];
+  blogTitle: string;
+  blogUrl: string;
+  authorName: string;
+  authorUrl: string;
+  providerName: string;
+  providerUrl: string;
+  published: string;
+}
+
+/**
+ * fetchHatenaBlogOEmbed オプション
+ */
+export interface FetchHatenaBlogOEmbedOptions {
+  timeoutMs?: number;
+  fetch?: typeof globalThis.fetch;
+}
+
+/**
  * Atom Entry XML ビルドオプション
  */
 export interface BuildHatenaEntryXmlOptions {
