@@ -241,7 +241,10 @@ export interface HatenaBookmark {
   comment: string;
   tags: string[];
   eid?: string;
+  user?: string;
+  private?: boolean;
   createdDatetime?: string;
+  createdEpoch?: number;
   permalink?: string;
 }
 
@@ -252,6 +255,39 @@ export interface AddHatenaBookmarkOptions {
   url: string;
   comment?: string;
   tags?: string[];
+  /** 非公開ブックマークにするかどうか */
+  private?: boolean;
+  /** Twitter へ共有するかどうか */
+  postTwitter?: boolean;
+  /** Evernote へ共有するかどうか */
+  postEvernote?: boolean;
+  /** mixi チェックへ共有するかどうか */
+  postMixi?: boolean;
+}
+
+/**
+ * はてなブックマーク エントリー情報（GET /rest/1/entry）
+ */
+export interface HatenaBookmarkEntry {
+  title: string;
+  url: string;
+  entryUrl: string;
+  count: number;
+  faviconUrl: string;
+  smartphoneAppEntryUrl: string;
+}
+
+/**
+ * はてなブックマーク ユーザー情報（GET /rest/1/my）
+ */
+export interface HatenaBookmarkUserInfo {
+  name: string;
+  plususer: boolean;
+  private: boolean;
+  isOAuthTwitter: boolean;
+  isOAuthEvernote: boolean;
+  isOAuthFacebook: boolean;
+  isOAuthMixiCheck: boolean;
 }
 
 /**

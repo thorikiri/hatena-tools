@@ -7,13 +7,16 @@ import type { HatenaFetchClient } from '../http/fetch-client.js';
 import type {
   AddHatenaBookmarkOptions,
   HatenaBookmark,
+  HatenaBookmarkEntry,
   HatenaBookmarkHotEntryCategory,
   HatenaBookmarkRssItem,
   HatenaBookmarkTag,
+  HatenaBookmarkUserInfo,
 } from '../types.js';
 import { parseHatenaBookmarkRssXml } from './bookmark-rss.js';
 
-const BOOKMARK_REST_BASE = 'https://bookmark.hatenaapis.com/rest/1/my';
+const BOOKMARK_REST_ROOT = 'https://bookmark.hatenaapis.com/rest/1';
+const BOOKMARK_REST_BASE = `${BOOKMARK_REST_ROOT}/my`;
 const DEFAULT_TIMEOUT_MS = 15_000;
 
 const ALLOWED_HOTENTRY_CATEGORIES = new Set<string>([
@@ -34,8 +37,30 @@ interface RawBookmarkResponse {
   comment?: string;
   tags?: string[];
   eid?: string;
+  user?: string;
+  private?: unknown;
   created_datetime?: string;
+  created_epoch?: number | string;
   permalink?: string;
+}
+
+interface RawBookmarkEntryResponse {
+  title?: string;
+  url?: string;
+  entry_url?: string;
+  count?: number | string;
+  favicon_url?: string;
+  smartphone_app_entry_url?: string;
+}
+
+interface RawBookmarkUserInfoResponse {
+  name?: string;
+  plususer?: unknown;
+  private?: unknown;
+  is_oauth_twitter?: unknown;
+  is_oauth_evernote?: unknown;
+  is_oauth_facebook?: unknown;
+  is_oauth_mixi_check?: unknown;
 }
 
 interface RawBookmarkTagsResponse {
@@ -48,13 +73,35 @@ export interface HatenaBookmarkClientOptions {
   fetch?: typeof globalThis.fetch;
 }
 
+function toHatenaBoolean(value: unknown): boolean {
+  return (
+    value !== null &&
+    value !== undefined &&
+    value !== false &&
+    value !== 0 &&
+    value !== '0'
+  );
+}
+
+function toOptionalNumber(
+  value: number | string | undefined,
+): number | undefined {
+  if (value === undefined) return undefined;
+  const parsed = typeof value === 'number' ? value : Number(value);
+  return Number.isNaN(parsed) ? undefined : parsed;
+}
+
 function mapRawBookmark(raw: RawBookmarkResponse): HatenaBookmark {
   return {
     url: raw.url,
     comment: raw.comment ?? '',
     tags: Array.isArray(raw.tags) ? raw.tags : [],
     eid: raw.eid,
+    user: raw.user,
+    private:
+      raw.private !== undefined ? toHatenaBoolean(raw.private) : undefined,
     createdDatetime: raw.created_datetime,
+    createdEpoch: toOptionalNumber(raw.created_epoch),
     permalink: raw.permalink,
   };
 }
@@ -116,6 +163,19 @@ export class HatenaBookmarkClient {
       formParams.tags = normalizedTags;
     }
 
+    if (options.private !== undefined) {
+      formParams.private = options.private ? '1' : '0';
+    }
+    if (options.postTwitter) {
+      formParams.post_twitter = '1';
+    }
+    if (options.postEvernote) {
+      formParams.post_evernote = '1';
+    }
+    if (options.postMixi) {
+      formParams.post_mixi_check = '1';
+    }
+
     const data = await this.http.requestJson<RawBookmarkResponse>({
       url: `${BOOKMARK_REST_BASE}/bookmark`,
       method: 'POST',
@@ -152,6 +212,53 @@ export class HatenaBookmarkClient {
       method: 'GET',
     });
     return Array.isArray(data.tags) ? data.tags : [];
+  }
+
+  /**
+   * 指定 URL のエントリー情報を取得する（GET /rest/1/entry）
+   */
+  public async getEntry(options: {
+    url: string;
+  }): Promise<HatenaBookmarkEntry | null> {
+    const endpoint = `${BOOKMARK_REST_ROOT}/entry?url=${encodeURIComponent(options.url)}`;
+    try {
+      const data = await this.http.requestJson<RawBookmarkEntryResponse>({
+        url: endpoint,
+        method: 'GET',
+      });
+      return {
+        title: data.title ?? '',
+        url: data.url ?? options.url,
+        entryUrl: data.entry_url ?? '',
+        count: toOptionalNumber(data.count) ?? 0,
+        faviconUrl: data.favicon_url ?? '',
+        smartphoneAppEntryUrl: data.smartphone_app_entry_url ?? '',
+      };
+    } catch (error) {
+      if (error instanceof HatenaApiError && error.code === 'NOT_FOUND') {
+        return null;
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * 認証済みユーザーのブックマーク設定情報を取得する（GET /rest/1/my）
+   */
+  public async getMyInfo(): Promise<HatenaBookmarkUserInfo> {
+    const data = await this.http.requestJson<RawBookmarkUserInfoResponse>({
+      url: BOOKMARK_REST_BASE,
+      method: 'GET',
+    });
+    return {
+      name: data.name ?? '',
+      plususer: toHatenaBoolean(data.plususer),
+      private: toHatenaBoolean(data.private),
+      isOAuthTwitter: toHatenaBoolean(data.is_oauth_twitter),
+      isOAuthEvernote: toHatenaBoolean(data.is_oauth_evernote),
+      isOAuthFacebook: toHatenaBoolean(data.is_oauth_facebook),
+      isOAuthMixiCheck: toHatenaBoolean(data.is_oauth_mixi_check),
+    };
   }
 
   /**
