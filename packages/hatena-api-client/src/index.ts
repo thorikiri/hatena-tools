@@ -56,6 +56,14 @@ export {
   parseFotolifeFeedXml,
 } from './services/fotolife-xml.js';
 export {
+  fetchHatenaStarBlogCount,
+  fetchHatenaStarCountImage,
+  fetchHatenaStarEntries,
+  getHatenaStarCountImageUrl,
+  HatenaStarClient,
+  parseStarCountHeader,
+} from './services/star.js';
+export {
   getHatenaProfileImageUrl,
   HatenaUserClient,
   type HatenaUserClientOptions,
@@ -102,6 +110,12 @@ export type {
   HatenaProfileImageResult,
   HatenaProfileImageSize,
   HatenaRequestOptions,
+  HatenaStarBlogCount,
+  HatenaStarColoredGroup,
+  HatenaStarCountImageResult,
+  HatenaStarEntry,
+  HatenaStarImageOptions,
+  HatenaStarItem,
   HatenaUser,
   HatenaWsseCredentials,
   HttpMethod,

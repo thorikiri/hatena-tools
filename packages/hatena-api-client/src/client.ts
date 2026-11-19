@@ -2,6 +2,7 @@ import { HatenaFetchClient } from './http/fetch-client.js';
 import { HatenaBlogClient } from './services/blog.js';
 import { HatenaBookmarkClient } from './services/bookmark.js';
 import { HatenaFotolifeClient } from './services/fotolife.js';
+import { HatenaStarClient } from './services/star.js';
 import { HatenaUserClient } from './services/user.js';
 import type { HatenaClientOptions, HatenaRequestOptions } from './types.js';
 
@@ -22,6 +23,9 @@ export class HatenaClient {
 
   /** はてなフォトライフ AtomPub API クライアント */
   public readonly fotolife: HatenaFotolifeClient;
+
+  /** はてなスター API クライアント */
+  public readonly star: HatenaStarClient;
 
   constructor(options: HatenaClientOptions) {
     this.http = new HatenaFetchClient(options);
@@ -45,6 +49,10 @@ export class HatenaClient {
       fetch: options.fetch,
     });
     this.fotolife = new HatenaFotolifeClient(this.http);
+    this.star = new HatenaStarClient({
+      timeoutMs: options.timeoutMs,
+      fetch: options.fetch,
+    });
   }
 
   /**
