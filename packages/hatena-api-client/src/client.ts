@@ -25,10 +25,14 @@ export class HatenaClient {
 
   constructor(options: HatenaClientOptions) {
     this.http = new HatenaFetchClient(options);
-    this.user = new HatenaUserClient(this.http);
     const defaultHatenaId =
       options.hatenaId ??
       (options.auth.type === 'wsse' ? options.auth.hatenaId : undefined);
+    this.user = new HatenaUserClient(this.http, {
+      hatenaId: defaultHatenaId,
+      timeoutMs: options.timeoutMs,
+      fetch: options.fetch,
+    });
     this.blog = new HatenaBlogClient(this.http, {
       hatenaId: defaultHatenaId,
       blogId: options.blogId,

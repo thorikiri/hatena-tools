@@ -277,3 +277,25 @@ export interface DeleteFotolifePhotoOptions {
   syntax?: string;
   imageUrl?: string;
 }
+
+/**
+ * はてなプロフィール画像のサイズ
+ */
+export type HatenaProfileImageSize = 64 | 128 | 256 | 512;
+
+/**
+ * はてなプロフィール画像取得オプション
+ */
+export interface GetHatenaProfileImageOptions {
+  hatenaId?: string;
+  size?: HatenaProfileImageSize;
+}
+
+/**
+ * はてなプロフィール画像ダウンロード結果
+ */
+export interface HatenaProfileImageResult {
+  url: string;
+  contentType: string;
+  data: Uint8Array;
+}
