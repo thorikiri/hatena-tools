@@ -240,6 +240,8 @@ export interface HatenaFotolifePhoto {
   photoId: string;
   title: string;
   imageUrl: string | null;
+  imageUrlSmall: string | null;
+  pageUrl: string | null;
   syntax: string | null;
   editUrl: string | null;
   hatenaUser: string | null;
@@ -266,6 +268,16 @@ export interface UploadFotolifePhotoOptions {
   contentType?: string;
   /** 保存先フォルダ名（<dc:subject>） */
   folder?: string;
+  /** アップロードツール名（<generator>） */
+  generator?: string;
+}
+
+/**
+ * はてなフォトライフ画像更新オプション
+ */
+export interface UpdateFotolifePhotoOptions {
+  /** 変更後の画像タイトル */
+  title: string;
 }
 
 /**

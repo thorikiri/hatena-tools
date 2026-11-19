@@ -142,4 +142,36 @@ describe('HatenaFotolifeClient', () => {
     );
     expect(fetchMock.mock.calls[1]?.[1]?.method).toBe('DELETE');
   });
+
+  it('getPhoto で単一写真情報を取得できること', async () => {
+    const fetchMock = vi
+      .fn<typeof globalThis.fetch>()
+      .mockResolvedValue(new Response(UPLOAD_RESPONSE_XML, { status: 200 }));
+
+    const client = createClient(fetchMock);
+    const photo = await client.fotolife.getPhoto('20261119123456');
+
+    expect(photo.photoId).toBe('20261119123456');
+    expect(photo.title).toBe('sunset.jpg');
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(
+      'https://f.hatena.ne.jp/atom/edit/20261119123456',
+    );
+    expect(fetchMock.mock.calls[0]?.[1]?.method).toBe('GET');
+  });
+
+  it('updatePhoto で写真のタイトルを更新できること', async () => {
+    const fetchMock = vi
+      .fn<typeof globalThis.fetch>()
+      .mockResolvedValue(new Response(null, { status: 200 }));
+
+    const client = createClient(fetchMock);
+    await client.fotolife.updatePhoto('f:id:taro:20261119123456j:image', {
+      title: '新しいタイトル',
+    });
+
+    const [url, init] = fetchMock.mock.calls[0] ?? [];
+    expect(url).toBe('https://f.hatena.ne.jp/atom/edit/20261119123456');
+    expect(init?.method).toBe('PUT');
+    expect(init?.body).toContain('<title>新しいタイトル</title>');
+  });
 });

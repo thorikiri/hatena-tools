@@ -5,9 +5,11 @@ import type {
   DeleteFotolifePhotoOptions,
   HatenaFotolifeFeed,
   HatenaFotolifePhoto,
+  UpdateFotolifePhotoOptions,
   UploadFotolifePhotoOptions,
 } from '../types.js';
 import {
+  buildFotolifeUpdateXml,
   buildFotolifeUploadXml,
   parseFotolifeEntryXml,
   parseFotolifeFeedXml,
@@ -154,6 +156,48 @@ export class HatenaFotolifeClient {
     });
 
     return parseFotolifeFeedXml(responseXml);
+  }
+
+  /**
+   * 単一の写真情報を取得する（GET https://f.hatena.ne.jp/atom/edit/{photoId}）
+   */
+  public async getPhoto(
+    target: string | DeleteFotolifePhotoOptions,
+  ): Promise<HatenaFotolifePhoto> {
+    const editUrl = resolveFotolifeEditUrl(target);
+    const responseXml = await this.http.requestText({
+      url: editUrl,
+      method: 'GET',
+    });
+
+    const parsed = parseFotolifeEntryXml(responseXml);
+    if (!parsed) {
+      throw new HatenaApiError(
+        'はてなフォトライフの写真情報レスポンスのパースに失敗しました',
+        { code: 'API_ERROR', responseBody: responseXml },
+      );
+    }
+
+    return parsed;
+  }
+
+  /**
+   * 写真のタイトルを更新する（PUT https://f.hatena.ne.jp/atom/edit/{photoId}）
+   */
+  public async updatePhoto(
+    target: string | DeleteFotolifePhotoOptions,
+    options: UpdateFotolifePhotoOptions,
+  ): Promise<void> {
+    const editUrl = resolveFotolifeEditUrl(target);
+    const xmlBody = buildFotolifeUpdateXml(options);
+    await this.http.request({
+      url: editUrl,
+      method: 'PUT',
+      headers: {
+        'Content-Type': FOTOLIFE_CONTENT_TYPE,
+      },
+      body: xmlBody,
+    });
   }
 
   /**
