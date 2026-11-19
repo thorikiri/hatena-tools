@@ -15,7 +15,7 @@
     "format": "biome format --write ."
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=22.0.0"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.6.8",
