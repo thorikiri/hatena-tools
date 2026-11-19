@@ -1,6 +1,12 @@
 import { describe, expect, it, vi } from 'vitest';
 import { HatenaClient } from '../client.js';
 import { HatenaApiError } from '../errors.js';
+import {
+  fetchHatenaBookmarkCommentOEmbed,
+  fetchHatenaBookmarkCount,
+  fetchHatenaBookmarkCounts,
+  fetchHatenaBookmarkEntryInfo,
+} from './bookmark.js';
 
 const SAMPLE_RSS_XML = `<?xml version="1.0" encoding="utf-8"?>
 <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns="http://purl.org/rss/1.0/">
@@ -289,6 +295,196 @@ describe('HatenaBookmarkClient', () => {
     });
     expect(fetchMock.mock.calls[0]?.[0]).toBe(
       'https://bookmark.hatenaapis.com/rest/1/my',
+    );
+  });
+
+  it('getCount と getCounts でブックマーク件数を取得できること（50件上限チェック含む）', async () => {
+    const fetchMock = vi
+      .fn<typeof globalThis.fetch>()
+      .mockResolvedValueOnce(new Response('1303', { status: 200 }))
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            'https://a.example.com': 10,
+            'https://b.example.com': 20,
+          }),
+          { status: 200 },
+        ),
+      );
+
+    expect(
+      await fetchHatenaBookmarkCount('https://hatena.blog/', {
+        fetch: fetchMock,
+      }),
+    ).toBe(1303);
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(
+      'https://bookmark.hatenaapis.com/count/entry?url=https%3A%2F%2Fhatena.blog%2F',
+    );
+
+    const client = createClient(fetchMock);
+    expect(
+      await client.bookmark.getCounts({
+        urls: ['https://a.example.com', 'https://b.example.com'],
+      }),
+    ).toEqual({
+      'https://a.example.com': 10,
+      'https://b.example.com': 20,
+    });
+    expect(fetchMock.mock.calls[1]?.[0]).toBe(
+      'https://bookmark.hatenaapis.com/count/entries?url=https%3A%2F%2Fa.example.com&url=https%3A%2F%2Fb.example.com',
+    );
+
+    const tooMany = Array.from(
+      { length: 51 },
+      (_, i) => `https://example.com/${i}`,
+    );
+    await expect(
+      fetchHatenaBookmarkCounts(tooMany, { fetch: fetchMock }),
+    ).rejects.toBeInstanceOf(HatenaApiError);
+  });
+
+  it('getPublicEntry でエントリー情報（#エスケープ・lite・null返却）を取得できること', async () => {
+    const fetchMock = vi
+      .fn<typeof globalThis.fetch>()
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            title: 'Title',
+            count: 5,
+            url: 'https://example.com/#sec',
+            entry_url: 'https://b.hatena.ne.jp/entry/s/example.com/#sec',
+            screenshot: 'https://b.hatena.ne.jp/screenshot.png',
+            eid: '999',
+            bookmarks: [
+              {
+                user: 'taro',
+                tags: ['tech'],
+                timestamp: '2026/11/19 10:00',
+                comment: 'good',
+              },
+            ],
+          }),
+          { status: 200 },
+        ),
+      )
+      .mockResolvedValueOnce(new Response('null', { status: 200 }));
+
+    const entry = await fetchHatenaBookmarkEntryInfo(
+      'https://example.com/#sec',
+      { lite: true, fetch: fetchMock },
+    );
+    expect(entry).toMatchObject({
+      title: 'Title',
+      count: 5,
+      eid: '999',
+      bookmarks: [
+        {
+          user: 'taro',
+          tags: ['tech'],
+          timestamp: '2026/11/19 10:00',
+          comment: 'good',
+        },
+      ],
+    });
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(
+      'https://b.hatena.ne.jp/entry/jsonlite/https://example.com/%23sec',
+    );
+
+    const client = createClient(fetchMock);
+    expect(
+      await client.bookmark.getPublicEntry({ url: 'https://example.com/none' }),
+    ).toBeNull();
+  });
+
+  it('searchMyBookmarks で全文検索できること', async () => {
+    const fetchMock = vi.fn<typeof globalThis.fetch>().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          meta: { query: 'TypeScript', total: 1, elapsed: 0.01, status: 200 },
+          bookmarks: [
+            {
+              title: 'TS',
+              url: 'https://example.com',
+              count: 10,
+              eid: '1',
+              comment: 'memo',
+              tags: ['ts'],
+              timestamp: 1700000000,
+            },
+          ],
+        }),
+        { status: 200 },
+      ),
+    );
+
+    const client = createClient(fetchMock);
+    const res = await client.bookmark.searchMyBookmarks({
+      q: 'TypeScript',
+      of: 10,
+      limit: 20,
+    });
+
+    expect(res.meta.total).toBe(1);
+    expect(res.bookmarks).toHaveLength(1);
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(
+      'https://b.hatena.ne.jp/my/search/json?q=TypeScript&of=10&limit=20',
+    );
+  });
+
+  it('getCommentOEmbed でコメント oEmbed 情報を取得できること', async () => {
+    const fetchMock = vi.fn<typeof globalThis.fetch>().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          version: '1.0',
+          type: 'rich',
+          title: 'comment title',
+          url: 'https://b.hatena.ne.jp/entry/40863/comment/sample',
+          html: '<blockquote>...</blockquote>',
+          width: '100%',
+          height: '160px',
+          author_name: 'sample',
+          author_url: 'https://b.hatena.ne.jp/sample/',
+          provider_name: 'Hatena Bookmark',
+          provider_url: 'https://b.hatena.ne.jp/',
+        }),
+        { status: 200 },
+      ),
+    );
+
+    const oembed = await fetchHatenaBookmarkCommentOEmbed(
+      'https://b.hatena.ne.jp/entry/40863/comment/sample',
+      { fetch: fetchMock },
+    );
+    expect(oembed.authorName).toBe('sample');
+    expect(oembed.html).toBe('<blockquote>...</blockquote>');
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(
+      'https://b.hatena.ne.jp/api/oembed?url=https%3A%2F%2Fb.hatena.ne.jp%2Fentry%2F40863%2Fcomment%2Fsample&format=json',
+    );
+  });
+
+  it('getMyFeed のクエリパラメータと getFavoriteFeed が動作すること', async () => {
+    const fetchMock = vi
+      .fn<typeof globalThis.fetch>()
+      .mockResolvedValueOnce(new Response(SAMPLE_RSS_XML, { status: 200 }))
+      .mockResolvedValueOnce(new Response(SAMPLE_RSS_XML, { status: 200 }));
+
+    const client = createClient(fetchMock);
+
+    await client.bookmark.getMyFeed({
+      page: 2,
+      tag: 'TypeScript',
+      q: 'vitest',
+      date: '20261119',
+      url: 'https://example.com',
+    });
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(
+      'https://b.hatena.ne.jp/taro/rss?page=2&tag=TypeScript&q=vitest&date=20261119&url=https%3A%2F%2Fexample.com',
+    );
+
+    const fav = await client.bookmark.getFavoriteFeed({ key: 'secret-key' });
+    expect(fav).toHaveLength(1);
+    expect(fetchMock.mock.calls[1]?.[0]).toBe(
+      'https://b.hatena.ne.jp/taro/favorite.rss?key=secret-key',
     );
   });
 });

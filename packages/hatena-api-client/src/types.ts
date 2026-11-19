@@ -326,6 +326,122 @@ export interface HatenaBookmarkRssItem {
 }
 
 /**
+ * はてなブックマーク公開 API 呼び出しオプション
+ */
+export interface HatenaBookmarkPublicFetchOptions {
+  timeoutMs?: number;
+  fetch?: typeof globalThis.fetch;
+}
+
+/**
+ * はてなブックマーク エントリー情報内の個別ブックマークコメント
+ */
+export interface HatenaBookmarkPublicComment {
+  user: string;
+  tags: string[];
+  timestamp: string;
+  comment: string;
+}
+
+/**
+ * はてなブックマーク 関連エントリー情報
+ */
+export interface HatenaBookmarkRelatedEntry {
+  title: string;
+  count: number;
+  url: string;
+  entryUrl: string;
+  eid: string;
+}
+
+/**
+ * はてなブックマーク エントリー情報（/entry/json, /entry/jsonlite）
+ */
+export interface HatenaBookmarkPublicEntry {
+  title: string;
+  count: number;
+  url: string;
+  entryUrl: string;
+  screenshot: string;
+  eid: string;
+  bookmarks: HatenaBookmarkPublicComment[];
+  related?: HatenaBookmarkRelatedEntry[];
+}
+
+/**
+ * マイブックマーク全文検索オプション
+ */
+export interface HatenaBookmarkSearchOptions {
+  q: string;
+  of?: number;
+  limit?: number;
+}
+
+/**
+ * マイブックマーク全文検索ヒットアイテム
+ */
+export interface HatenaBookmarkSearchBookmark {
+  title: string;
+  url: string;
+  count: number;
+  eid: string;
+  comment: string;
+  tags: string[];
+  timestamp: number;
+  snippet?: string;
+}
+
+/**
+ * マイブックマーク全文検索レスポンス
+ */
+export interface HatenaBookmarkSearchResult {
+  meta: {
+    query: string;
+    total: number;
+    elapsed: number;
+    status: number;
+  };
+  bookmarks: HatenaBookmarkSearchBookmark[];
+}
+
+/**
+ * はてなブックマーク コメント oEmbed レスポンス
+ */
+export interface HatenaBookmarkCommentOEmbed {
+  version: string;
+  type: string;
+  title: string;
+  url: string;
+  html: string;
+  width: string;
+  height: string;
+  authorName: string;
+  authorUrl: string;
+  providerName: string;
+  providerUrl: string;
+}
+
+/**
+ * マイブックマーク RSS 取得オプション
+ */
+export interface GetHatenaBookmarkMyFeedOptions {
+  hatenaId?: string;
+  page?: number;
+  tag?: string;
+  q?: string;
+  date?: string;
+  url?: string;
+}
+
+/**
+ * お気に入りブックマーク RSS 取得オプション
+ */
+export interface GetHatenaBookmarkFavoriteFeedOptions {
+  hatenaId?: string;
+  key: string;
+}
+
+/**
  * はてなフォトライフの写真情報
  */
 export interface HatenaFotolifePhoto {
