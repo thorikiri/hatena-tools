@@ -1,12 +1,18 @@
-import { HatenaApiError } from '../errors.js';
+import {
+  HatenaApiError,
+  isTimeoutError,
+  statusToErrorCode,
+} from '../errors.js';
 import type { HatenaFetchClient } from '../http/fetch-client.js';
 import { validateAllowedHatenaUrl } from '../http/url-validator.js';
 import type {
   CreateHatenaBlogEntryOptions,
+  FetchHatenaBlogOEmbedOptions,
   GetHatenaBlogEntriesOptions,
   HatenaBlogEntry,
   HatenaBlogEntryType,
   HatenaBlogFeed,
+  HatenaBlogOEmbed,
   HatenaBlogServiceDocument,
   HatenaBlogTargetOptions,
   UpdateHatenaBlogEntryOptions,
@@ -22,10 +28,106 @@ import {
 
 const ATOM_CONTENT_TYPE = 'application/atom+xml; charset=utf-8';
 const BLOG_ALLOWED_HOSTS = ['blog.hatena.ne.jp'] as const;
+const OEMBED_ENDPOINT = 'https://hatena.blog/oembed';
+const DEFAULT_TIMEOUT_MS = 15_000;
+
+interface RawHatenaBlogOEmbedResponse {
+  version?: string;
+  type?: string;
+  title?: string;
+  url?: string;
+  description?: string;
+  html?: string;
+  width?: string | number;
+  height?: string | number;
+  image_url?: string | null;
+  categories?: string[];
+  blog_title?: string;
+  blog_url?: string;
+  author_name?: string;
+  author_url?: string;
+  provider_name?: string;
+  provider_url?: string;
+  published?: string;
+}
+
+/**
+ * はてなブログの公開記事 URL から oEmbed 情報を取得する（認証不要）
+ */
+export async function fetchHatenaBlogOEmbed(
+  url: string,
+  options?: FetchHatenaBlogOEmbedOptions,
+): Promise<HatenaBlogOEmbed> {
+  const trimmedUrl = url.trim();
+  if (!trimmedUrl) {
+    throw new HatenaApiError('対象の記事 URL が指定されていません。', {
+      code: 'API_ERROR',
+    });
+  }
+
+  const endpoint = `${OEMBED_ENDPOINT}?url=${encodeURIComponent(trimmedUrl)}&format=json`;
+  const fetchImpl = options?.fetch ?? globalThis.fetch;
+  const timeoutMs = options?.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+
+  let response: Response;
+  try {
+    response = await fetchImpl(endpoint, {
+      method: 'GET',
+      signal: AbortSignal.timeout(timeoutMs),
+    });
+  } catch (error) {
+    if (isTimeoutError(error)) {
+      throw new HatenaApiError(
+        'はてなブログ oEmbed API への接続がタイムアウトしました',
+        { code: 'TIMEOUT', cause: error },
+      );
+    }
+    throw new HatenaApiError('はてなブログ oEmbed API への通信に失敗しました', {
+      code: 'NETWORK_ERROR',
+      cause: error,
+    });
+  }
+
+  if (!response.ok) {
+    const responseBody = await response.text().catch(() => undefined);
+    throw new HatenaApiError(
+      `はてなブログ oEmbed API がエラーを返しました (HTTP ${response.status})`,
+      {
+        code: statusToErrorCode(response.status),
+        status: response.status,
+        responseBody,
+      },
+    );
+  }
+
+  const data = (await response.json()) as RawHatenaBlogOEmbedResponse;
+
+  return {
+    version: data.version ?? '1.0',
+    type: data.type ?? 'rich',
+    title: data.title ?? '',
+    url: data.url ?? trimmedUrl,
+    description: data.description ?? '',
+    html: data.html ?? '',
+    width: String(data.width ?? '100%'),
+    height: String(data.height ?? '190'),
+    imageUrl: data.image_url ?? null,
+    categories: Array.isArray(data.categories) ? data.categories : [],
+    blogTitle: data.blog_title ?? '',
+    blogUrl: data.blog_url ?? '',
+    authorName: data.author_name ?? '',
+    authorUrl: data.author_url ?? '',
+    providerName: data.provider_name ?? 'Hatena Blog',
+    providerUrl: data.provider_url ?? 'https://hatena.blog',
+    published: data.published ?? '',
+  };
+}
 
 export interface HatenaBlogClientDefaults {
   hatenaId?: string;
   blogId?: string;
+  timeoutMs?: number;
+  fetch?: typeof globalThis.fetch;
 }
 
 /**
@@ -292,5 +394,17 @@ export class HatenaBlogClient {
     const url = `https://blog.hatena.ne.jp/${encodeURIComponent(hatenaId)}/${encodeURIComponent(blogId)}/atom`;
     const xml = await this.http.requestText({ url, method: 'GET' });
     return parseHatenaServiceDocumentXml(xml);
+  }
+
+  // --- oEmbed API ---
+
+  /**
+   * 公開記事 URL の oEmbed 情報を取得する（GET https://hatena.blog/oembed）
+   */
+  public getOEmbed(options: { url: string }): Promise<HatenaBlogOEmbed> {
+    return fetchHatenaBlogOEmbed(options.url, {
+      timeoutMs: this.defaults.timeoutMs,
+      fetch: this.defaults.fetch,
+    });
   }
 }

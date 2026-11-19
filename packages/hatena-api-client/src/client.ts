@@ -36,6 +36,8 @@ export class HatenaClient {
     this.blog = new HatenaBlogClient(this.http, {
       hatenaId: defaultHatenaId,
       blogId: options.blogId,
+      timeoutMs: options.timeoutMs,
+      fetch: options.fetch,
     });
     this.bookmark = new HatenaBookmarkClient(this.http, {
       hatenaId: defaultHatenaId,
