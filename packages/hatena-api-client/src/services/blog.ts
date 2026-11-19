@@ -7,6 +7,7 @@ import type {
   HatenaBlogEntry,
   HatenaBlogEntryType,
   HatenaBlogFeed,
+  HatenaBlogServiceDocument,
   HatenaBlogTargetOptions,
   UpdateHatenaBlogEntryOptions,
   UpdateHatenaBlogPageOptions,
@@ -16,6 +17,7 @@ import {
   parseHatenaCategoriesXml,
   parseHatenaEntriesFeedXml,
   parseHatenaEntryXml,
+  parseHatenaServiceDocumentXml,
 } from './blog-xml.js';
 
 const ATOM_CONTENT_TYPE = 'application/atom+xml; charset=utf-8';
@@ -276,5 +278,19 @@ export class HatenaBlogClient {
     const url = this.buildCollectionUrl('category', options);
     const xml = await this.http.requestText({ url, method: 'GET' });
     return parseHatenaCategoriesXml(xml);
+  }
+
+  // --- サービス文書 API ---
+
+  /**
+   * ブログの AtomPub サービス文書を取得する（GET /atom）
+   */
+  public async getServiceDocument(
+    options?: HatenaBlogTargetOptions,
+  ): Promise<HatenaBlogServiceDocument> {
+    const { hatenaId, blogId } = this.resolveTarget(options);
+    const url = `https://blog.hatena.ne.jp/${encodeURIComponent(hatenaId)}/${encodeURIComponent(blogId)}/atom`;
+    const xml = await this.http.requestText({ url, method: 'GET' });
+    return parseHatenaServiceDocumentXml(xml);
   }
 }

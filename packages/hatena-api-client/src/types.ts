@@ -106,6 +106,9 @@ export interface HatenaBlogEntry {
   type: HatenaBlogEntryType;
   title: string;
   content: string;
+  formattedContent: string | null;
+  summary: string | null;
+  author: string | null;
   format: HatenaBlogFormat;
   status: HatenaBlogEntryStatus;
   externalUrl: string | null;
@@ -114,14 +117,36 @@ export interface HatenaBlogEntry {
   customUrl: string | null;
   categories: string[];
   publishedAt: Date;
+  updatedAt: Date | null;
+  editedAt: Date | null;
 }
 
 /**
  * はてなブログの一覧フィード結果
  */
 export interface HatenaBlogFeed {
+  title: string | null;
+  blogUrl: string | null;
   nextUrl: string | null;
   entries: HatenaBlogEntry[];
+}
+
+/**
+ * はてなブログ AtomPub サービス文書内のコレクション定義
+ */
+export interface HatenaBlogCollection {
+  href: string;
+  title: string | null;
+  accepts: string[];
+  categoriesHref: string | null;
+}
+
+/**
+ * はてなブログ AtomPub サービス文書
+ */
+export interface HatenaBlogServiceDocument {
+  workspaceTitle: string | null;
+  collections: HatenaBlogCollection[];
 }
 
 /**

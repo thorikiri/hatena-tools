@@ -170,4 +170,29 @@ describe('HatenaBlogClient', () => {
       HatenaApiError,
     );
   });
+
+  it('getServiceDocument がサービス文書を取得・パースすること', async () => {
+    const serviceXml = `<?xml version="1.0" encoding="utf-8"?>
+<service xmlns="http://www.w3.org/2007/app" xmlns:atom="http://www.w3.org/2005/Atom">
+  <workspace>
+    <atom:title>たろうのブログ</atom:title>
+    <collection href="https://blog.hatena.ne.jp/taro/taro.hatenablog.com/atom/entry">
+      <atom:title>記事</atom:title>
+      <accept>application/atom+xml;type=entry</accept>
+    </collection>
+  </workspace>
+</service>`;
+
+    const fetchMock = vi
+      .fn<typeof globalThis.fetch>()
+      .mockResolvedValue(new Response(serviceXml, { status: 200 }));
+    const client = createClient(fetchMock);
+
+    const doc = await client.blog.getServiceDocument();
+    expect(doc.workspaceTitle).toBe('たろうのブログ');
+    expect(doc.collections).toHaveLength(1);
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(
+      'https://blog.hatena.ne.jp/taro/taro.hatenablog.com/atom',
+    );
+  });
 });

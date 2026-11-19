@@ -236,3 +236,27 @@ export function findAllDescendants(
   }
   return results;
 }
+
+/**
+ * XmlElement の内部コンテンツ（テキストまたは子要素のシリアライズ）を文字列として返す
+ */
+export function getInnerXml(element: XmlElement): string {
+  if (element.children.length === 0) {
+    return element.text;
+  }
+  const serializedChildren = element.children
+    .map((child) => serializeElement(child))
+    .join('');
+  return `${element.text}${serializedChildren}`;
+}
+
+function serializeElement(element: XmlElement): string {
+  const attrs = Object.entries(element.attributes)
+    .map(([k, v]) => ` ${k}="${escapeXml(v)}"`)
+    .join('');
+  const inner = getInnerXml(element);
+  if (!inner) {
+    return `<${element.name}${attrs} />`;
+  }
+  return `<${element.name}${attrs}>${inner}</${element.name}>`;
+}
