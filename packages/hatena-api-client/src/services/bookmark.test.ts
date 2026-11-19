@@ -184,4 +184,111 @@ describe('HatenaBookmarkClient', () => {
       HatenaApiError,
     );
   });
+
+  it('add で private と共有オプションを送信しレスポンスの拡張フィールドを受け取れること', async () => {
+    const fetchMock = vi.fn<typeof globalThis.fetch>().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          url: 'https://example.com',
+          comment: 'secret',
+          tags: [],
+          user: 'taro',
+          private: 1,
+          created_epoch: 1700000000,
+        }),
+        { status: 200 },
+      ),
+    );
+
+    const client = createClient(fetchMock);
+    const result = await client.bookmark.add({
+      url: 'https://example.com',
+      comment: 'secret',
+      private: true,
+      postTwitter: true,
+    });
+
+    expect(result).toMatchObject({
+      user: 'taro',
+      private: true,
+      createdEpoch: 1700000000,
+    });
+    expect(fetchMock.mock.calls[0]?.[1]?.body).toBe(
+      'url=https%3A%2F%2Fexample.com&comment=secret&private=1&post_twitter=1',
+    );
+  });
+
+  it('getEntry でエントリー情報を取得し 404 時は null を返すこと', async () => {
+    const fetchMock = vi
+      .fn<typeof globalThis.fetch>()
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            title: 'Sample Page',
+            url: 'https://example.com',
+            entry_url: 'https://b.hatena.ne.jp/entry/s/example.com',
+            count: '42',
+            favicon_url: 'https://example.com/favicon.ico',
+            smartphone_app_entry_url:
+              'https://b.hatena.ne.jp/entry/s/example.com',
+          }),
+          { status: 200 },
+        ),
+      )
+      .mockResolvedValueOnce(new Response('Not Found', { status: 404 }));
+
+    const client = createClient(fetchMock);
+
+    const entry = await client.bookmark.getEntry({
+      url: 'https://example.com',
+    });
+    expect(entry).toEqual({
+      title: 'Sample Page',
+      url: 'https://example.com',
+      entryUrl: 'https://b.hatena.ne.jp/entry/s/example.com',
+      count: 42,
+      faviconUrl: 'https://example.com/favicon.ico',
+      smartphoneAppEntryUrl: 'https://b.hatena.ne.jp/entry/s/example.com',
+    });
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(
+      'https://bookmark.hatenaapis.com/rest/1/entry?url=https%3A%2F%2Fexample.com',
+    );
+
+    expect(
+      await client.bookmark.getEntry({ url: 'https://example.com/none' }),
+    ).toBeNull();
+  });
+
+  it('getMyInfo でユーザー設定情報を取得できること', async () => {
+    const fetchMock = vi.fn<typeof globalThis.fetch>().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          name: 'taro',
+          plususer: 1,
+          private: '0',
+          is_oauth_twitter: 1,
+          is_oauth_evernote: null,
+          is_oauth_facebook: 0,
+          is_oauth_mixi_check: '0',
+        }),
+        { status: 200 },
+      ),
+    );
+
+    const client = createClient(fetchMock);
+    const info = await client.bookmark.getMyInfo();
+
+    expect(info).toEqual({
+      name: 'taro',
+      plususer: true,
+      private: false,
+      isOAuthTwitter: true,
+      isOAuthEvernote: false,
+      isOAuthFacebook: false,
+      isOAuthMixiCheck: false,
+    });
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(
+      'https://bookmark.hatenaapis.com/rest/1/my',
+    );
+  });
 });
