@@ -44,6 +44,7 @@ export {
   resolveFotolifeEditUrl,
 } from './services/fotolife.js';
 export {
+  buildFotolifeUpdateXml,
   buildFotolifeUploadXml,
   parseFotolifeEntryXml,
   parseFotolifeFeedXml,
@@ -82,6 +83,7 @@ export type {
   HatenaUser,
   HatenaWsseCredentials,
   HttpMethod,
+  UpdateFotolifePhotoOptions,
   UpdateHatenaBlogEntryOptions,
   UpdateHatenaBlogPageOptions,
   UploadFotolifePhotoOptions,

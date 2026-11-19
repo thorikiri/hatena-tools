@@ -2,6 +2,7 @@ import { uint8ArrayToBase64 } from '../auth/wsse.js';
 import type {
   HatenaFotolifeFeed,
   HatenaFotolifePhoto,
+  UpdateFotolifePhotoOptions,
   UploadFotolifePhotoOptions,
 } from '../types.js';
 import {
@@ -35,6 +36,7 @@ function parseFotolifeEntryElement(
     parsedIssued && !Number.isNaN(parsedIssued.getTime()) ? parsedIssued : null;
 
   const imageUrl = findChild(el, 'imageurl')?.text.trim() || null;
+  const imageUrlSmall = findChild(el, 'imageurlsmall')?.text.trim() || null;
   const syntax = findChild(el, 'syntax')?.text.trim() || null;
 
   let hatenaUser = fallbackUser;
@@ -46,6 +48,14 @@ function parseFotolifeEntryElement(
   }
 
   const links = findChildren(el, 'link');
+  const pageUrl =
+    links.find(
+      (l) =>
+        l.attributes.rel === 'alternate' && l.attributes.type === 'text/html',
+    )?.attributes.href ??
+    links.find((l) => l.attributes.rel === 'alternate')?.attributes.href ??
+    null;
+
   let editUrl =
     links.find((l) => l.attributes.rel === 'service.edit')?.attributes.href ??
     links.find((l) => l.attributes.rel === 'edit')?.attributes.href ??
@@ -64,6 +74,8 @@ function parseFotolifeEntryElement(
     photoId,
     title,
     imageUrl,
+    imageUrlSmall,
+    pageUrl,
     syntax,
     editUrl,
     hatenaUser,
@@ -84,6 +96,7 @@ export function buildFotolifeUploadXml(
   const base64Content = uint8ArrayToBase64(bytes);
   const contentType = options.contentType?.trim() || 'image/jpeg';
   const folder = options.folder?.trim();
+  const generator = options.generator?.trim();
 
   const lines = [
     '<?xml version="1.0" encoding="utf-8"?>',
@@ -91,10 +104,25 @@ export function buildFotolifeUploadXml(
     `  <title>${escapeXml(options.title)}</title>`,
     `  <content mode="base64" type="${escapeXml(contentType)}">${base64Content}</content>`,
     ...(folder ? [`  <dc:subject>${escapeXml(folder)}</dc:subject>`] : []),
+    ...(generator ? [`  <generator>${escapeXml(generator)}</generator>`] : []),
     '</entry>',
   ];
 
   return lines.join('\n');
+}
+
+/**
+ * はてなフォトライフ画像タイトル更新用の Atom Entry XML を組み立てる
+ */
+export function buildFotolifeUpdateXml(
+  options: UpdateFotolifePhotoOptions,
+): string {
+  return [
+    '<?xml version="1.0" encoding="utf-8"?>',
+    '<entry xmlns="http://purl.org/atom/ns#">',
+    `  <title>${escapeXml(options.title)}</title>`,
+    '</entry>',
+  ].join('\n');
 }
 
 /**
