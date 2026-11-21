@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildHatenaEntryXml,
+  parseHatenaBlogPublicFeedXml,
   parseHatenaCategoriesXml,
   parseHatenaEntriesFeedXml,
   parseHatenaEntryXml,
@@ -162,6 +163,86 @@ describe('blog-xml', () => {
           accepts: ['application/atom+xml;type=entry'],
           categoriesHref:
             'https://blog.hatena.ne.jp/taro/taro.hatenablog.com/atom/category',
+        },
+      ],
+    });
+  });
+
+  it('parseHatenaBlogPublicFeedXml が RSS 2.0 フィードをパースすること', () => {
+    const rssXml = `<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <channel>
+    <title>開発ブログ</title>
+    <link>https://staff.hatenablog.com/</link>
+    <description>はてなブログのお知らせ</description>
+    <item>
+      <title>新機能のお知らせ</title>
+      <link>https://staff.hatenablog.com/entry/2026/11/21</link>
+      <description>概要テキスト</description>
+      <content:encoded><![CDATA[<p>本文HTML</p>]]></content:encoded>
+      <dc:creator>hatenablog</dc:creator>
+      <category>お知らせ</category>
+      <category>新機能</category>
+      <pubDate>Sat, 21 Nov 2026 09:00:00 +0900</pubDate>
+    </item>
+  </channel>
+</rss>`;
+
+    const feed = parseHatenaBlogPublicFeedXml(rssXml);
+    expect(feed).toEqual({
+      format: 'rss',
+      title: '開発ブログ',
+      description: 'はてなブログのお知らせ',
+      blogUrl: 'https://staff.hatenablog.com/',
+      items: [
+        {
+          title: '新機能のお知らせ',
+          url: 'https://staff.hatenablog.com/entry/2026/11/21',
+          description: '概要テキスト',
+          content: '<p>本文HTML</p>',
+          author: 'hatenablog',
+          categories: ['お知らせ', '新機能'],
+          publishedAt: new Date('Sat, 21 Nov 2026 09:00:00 +0900'),
+          updatedAt: null,
+        },
+      ],
+    });
+  });
+
+  it('parseHatenaBlogPublicFeedXml が Atom 1.0 フィードをパースすること', () => {
+    const atomXml = `<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>開発ブログ</title>
+  <subtitle>サブタイトル</subtitle>
+  <link rel="alternate" href="https://staff.hatenablog.com/" />
+  <entry>
+    <title>Atom 記事</title>
+    <link rel="alternate" href="https://staff.hatenablog.com/entry/atom-1" />
+    <summary>要約</summary>
+    <content type="html">&lt;p&gt;HTML&lt;/p&gt;</content>
+    <author><name>taro</name></author>
+    <category term="Tech" />
+    <published>2026-11-21T09:00:00+09:00</published>
+    <updated>2026-11-21T10:00:00+09:00</updated>
+  </entry>
+</feed>`;
+
+    const feed = parseHatenaBlogPublicFeedXml(atomXml);
+    expect(feed).toEqual({
+      format: 'atom',
+      title: '開発ブログ',
+      description: 'サブタイトル',
+      blogUrl: 'https://staff.hatenablog.com/',
+      items: [
+        {
+          title: 'Atom 記事',
+          url: 'https://staff.hatenablog.com/entry/atom-1',
+          description: '要約',
+          content: '<p>HTML</p>',
+          author: 'taro',
+          categories: ['Tech'],
+          publishedAt: new Date('2026-11-21T09:00:00+09:00'),
+          updatedAt: new Date('2026-11-21T10:00:00+09:00'),
         },
       ],
     });

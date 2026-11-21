@@ -6,6 +6,8 @@ import type {
   HatenaBlogEntryType,
   HatenaBlogFeed,
   HatenaBlogFormat,
+  HatenaBlogPublicFeed,
+  HatenaBlogPublicFeedItem,
   HatenaBlogServiceDocument,
 } from '../types.js';
 import {
@@ -289,6 +291,140 @@ export function parseHatenaServiceDocumentXml(
     .filter((c) => Boolean(c.href));
 
   return { workspaceTitle, collections };
+}
+
+/**
+ * 公開はてなブログの RSS 2.0 / Atom 1.0 フィード XML をパースする
+ */
+export function parseHatenaBlogPublicFeedXml(
+  xml: string,
+): HatenaBlogPublicFeed {
+  const root = parseXml(xml);
+  if (!root) {
+    return {
+      format: 'rss',
+      title: null,
+      description: null,
+      blogUrl: null,
+      items: [],
+    };
+  }
+
+  // Atom 1.0 (<feed>)
+  if (root.localName === 'feed') {
+    const title = findChild(root, 'title')?.text.trim() || null;
+    const description = findChild(root, 'subtitle')?.text.trim() || null;
+    const feedLinks = findChildren(root, 'link');
+    const blogUrl = sanitizeHttpUrl(
+      (
+        feedLinks.find((l) => l.attributes.rel === 'alternate') ??
+        feedLinks.find((l) => !l.attributes.rel)
+      )?.attributes.href,
+    );
+
+    const items: HatenaBlogPublicFeedItem[] = [];
+    for (const entry of findChildren(root, 'entry')) {
+      const entryLinks = findChildren(entry, 'link');
+      const altLink =
+        entryLinks.find((l) => l.attributes.rel === 'alternate') ??
+        entryLinks[0];
+      const url = sanitizeHttpUrl(altLink?.attributes.href);
+      if (!url) continue;
+
+      const itemTitle = findChild(entry, 'title')?.text.trim() || url;
+      const summary = findChild(entry, 'summary')?.text.trim() ?? '';
+      const contentEl = findChild(entry, 'content');
+      const content = contentEl ? getInnerXml(contentEl).trim() || null : null;
+      const authorEl = findChild(entry, 'author');
+      const author =
+        (authorEl ? findChild(authorEl, 'name')?.text.trim() : undefined) ||
+        null;
+
+      const categorySet = new Set<string>();
+      for (const catEl of findChildren(entry, 'category')) {
+        const term = catEl.attributes.term?.trim() || catEl.text.trim();
+        if (term) categorySet.add(term);
+      }
+
+      items.push({
+        title: itemTitle,
+        url,
+        description: summary,
+        content,
+        author,
+        categories: Array.from(categorySet),
+        publishedAt: parseOptionalDate(findChild(entry, 'published')?.text),
+        updatedAt: parseOptionalDate(findChild(entry, 'updated')?.text),
+      });
+    }
+
+    return {
+      format: 'atom',
+      title,
+      description,
+      blogUrl,
+      items,
+    };
+  }
+
+  // RSS 2.0 (<rss><channel>...)
+  const channel =
+    root.localName === 'channel' ? root : findChild(root, 'channel');
+  if (!channel) {
+    return {
+      format: 'rss',
+      title: null,
+      description: null,
+      blogUrl: null,
+      items: [],
+    };
+  }
+
+  const title = findChild(channel, 'title')?.text.trim() || null;
+  const description = findChild(channel, 'description')?.text.trim() || null;
+  const blogUrl = sanitizeHttpUrl(findChild(channel, 'link')?.text);
+
+  const items: HatenaBlogPublicFeedItem[] = [];
+  for (const item of findChildren(channel, 'item')) {
+    const url = sanitizeHttpUrl(findChild(item, 'link')?.text);
+    if (!url) continue;
+
+    const itemTitle = findChild(item, 'title')?.text.trim() || url;
+    const itemDesc = findChild(item, 'description')?.text.trim() ?? '';
+    const encodedEl = findChild(item, 'encoded');
+    const content = encodedEl ? getInnerXml(encodedEl).trim() || null : null;
+    const author =
+      findChild(item, 'creator')?.text.trim() ||
+      findChild(item, 'author')?.text.trim() ||
+      null;
+
+    const categorySet = new Set<string>();
+    for (const catEl of findChildren(item, 'category')) {
+      const cat = catEl.text.trim();
+      if (cat) categorySet.add(cat);
+    }
+
+    const publishedAt = parseOptionalDate(findChild(item, 'pubDate')?.text);
+
+    items.push({
+      title: itemTitle,
+      url,
+      description: itemDesc,
+      content,
+      author,
+      categories: Array.from(categorySet),
+      publishedAt,
+      updatedAt: null,
+    });
+  }
+
+  return {
+    format: 'rss',
+    title,
+    description,
+    blogUrl,
+    items,
+  };
 }
 
 /**

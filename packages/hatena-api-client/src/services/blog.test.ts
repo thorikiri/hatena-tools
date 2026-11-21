@@ -1,7 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
 import { HatenaClient } from '../client.js';
 import { HatenaApiError } from '../errors.js';
-import { fetchHatenaBlogOEmbed } from './blog.js';
+import {
+  buildHatenaBlogPublicFeedUrl,
+  fetchHatenaBlogOEmbed,
+  fetchHatenaBlogPublicFeed,
+} from './blog.js';
 
 const ENTRY_RESPONSE_XML = `<?xml version="1.0" encoding="utf-8"?>
 <entry xmlns="http://www.w3.org/2005/Atom" xmlns:app="http://www.w3.org/2007/app">
@@ -356,5 +360,52 @@ describe('HatenaBlogClient', () => {
     expect(pages).toHaveLength(1);
     expect(pages[0]?.type).toBe('page');
     expect(pages[0]?.entryId).toBe('500');
+  });
+
+  it('buildHatenaBlogPublicFeedUrl がドメイン・URLから正しいフィードURLを生成すること', () => {
+    expect(buildHatenaBlogPublicFeedUrl('staff.hatenablog.com')).toBe(
+      'https://staff.hatenablog.com/rss',
+    );
+    expect(
+      buildHatenaBlogPublicFeedUrl('https://example.com/blog/', 'atom'),
+    ).toBe('https://example.com/blog/feed');
+    expect(
+      buildHatenaBlogPublicFeedUrl('https://staff.hatenablog.com/rss'),
+    ).toBe('https://staff.hatenablog.com/rss');
+  });
+
+  it('fetchHatenaBlogPublicFeed と hatena.blog.getPublicFeed が公開フィードを取得できること', async () => {
+    const rssXml = `<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0">
+  <channel>
+    <title>テストブログ</title>
+    <link>https://taro.hatenablog.com/</link>
+    <item>
+      <title>記事1</title>
+      <link>https://taro.hatenablog.com/entry/1</link>
+      <description>説明</description>
+    </item>
+  </channel>
+</rss>`;
+
+    const fetchMock = vi
+      .fn<typeof globalThis.fetch>()
+      .mockResolvedValueOnce(new Response(rssXml, { status: 200 }))
+      .mockResolvedValueOnce(new Response(rssXml, { status: 200 }));
+
+    const direct = await fetchHatenaBlogPublicFeed('staff.hatenablog.com', {
+      fetch: fetchMock,
+    });
+    expect(direct.title).toBe('テストブログ');
+    expect(direct.items).toHaveLength(1);
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(
+      'https://staff.hatenablog.com/rss',
+    );
+
+    const client = createClient(fetchMock);
+    await client.blog.getPublicFeed({ format: 'atom' });
+    expect(fetchMock.mock.calls[1]?.[0]).toBe(
+      'https://taro.hatenablog.com/feed',
+    );
   });
 });
