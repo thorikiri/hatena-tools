@@ -4,10 +4,10 @@
 
 ## パッケージ構成
 
-| パッケージ名                   | ディレクトリ                 | 概要                                            |
-| ------------------------------ | ---------------------------- | ----------------------------------------------- |
-| `@thorikiri/hatena-api-client` | `packages/hatena-api-client` | はてなブログ・はてなサービス向けAPIクライアント |
-| `@thorikiri/hatena-syntax`     | `packages/hatena-syntax`     | はてな記法パーサーおよびコンバーター            |
+| パッケージ名                                                             | ディレクトリ                 | 概要                                            |
+| ------------------------------------------------------------------------ | ---------------------------- | ----------------------------------------------- |
+| [`@thorikiri/hatena-api-client`](./packages/hatena-api-client/README.md) | `packages/hatena-api-client` | はてなブログ・はてなサービス向けAPIクライアント |
+| `@thorikiri/hatena-syntax`                                               | `packages/hatena-syntax`     | はてな記法パーサーおよびコンバーター            |
 
 ## ディレクトリ構成
 
