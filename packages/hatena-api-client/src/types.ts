@@ -211,6 +211,15 @@ export interface GetHatenaBlogEntriesOptions extends HatenaBlogTargetOptions {
 }
 
 /**
+ * 記事・固定ページのページネーション自動巡回オプション
+ */
+export interface IterateHatenaBlogEntriesOptions
+  extends GetHatenaBlogEntriesOptions {
+  /** 取得する最大ページ数（デフォルト: 200） */
+  maxPages?: number;
+}
+
+/**
  * 記事・固定ページ作成オプション
  */
 export interface CreateHatenaBlogEntryOptions

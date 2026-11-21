@@ -263,4 +263,98 @@ describe('HatenaBlogClient', () => {
       status: 404,
     });
   });
+
+  it('iterateEntries と getAllEntries が複数ページを自動巡回すること（maxPages・循環防止含む）', async () => {
+    const makeFeed = (
+      id: string,
+      nextUrl?: string,
+    ) => `<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  ${nextUrl ? `<link rel="next" href="${nextUrl}" />` : ''}
+  <entry>
+    <link rel="edit" href="https://blog.hatena.ne.jp/taro/taro.hatenablog.com/atom/entry/${id}" />
+    <title>Entry ${id}</title>
+    <content type="text/x-markdown">Body ${id}</content>
+  </entry>
+</feed>`;
+
+    const fetchMock = vi
+      .fn<typeof globalThis.fetch>()
+      .mockResolvedValueOnce(
+        new Response(
+          makeFeed(
+            '1',
+            'https://blog.hatena.ne.jp/taro/taro.hatenablog.com/atom/entry?page=2',
+          ),
+          { status: 200 },
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          makeFeed(
+            '2',
+            'https://blog.hatena.ne.jp/taro/taro.hatenablog.com/atom/entry?page=3',
+          ),
+          { status: 200 },
+        ),
+      )
+      .mockResolvedValueOnce(new Response(makeFeed('3'), { status: 200 }));
+
+    const client = createClient(fetchMock);
+    const all = await client.blog.getAllEntries();
+
+    expect(all.map((e) => e.entryId)).toEqual(['1', '2', '3']);
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+
+    // maxPages 指定と同一 nextUrl の循環防止テスト
+    const loopMock = vi
+      .fn<typeof globalThis.fetch>()
+      .mockResolvedValueOnce(
+        new Response(
+          makeFeed(
+            '10',
+            'https://blog.hatena.ne.jp/taro/taro.hatenablog.com/atom/entry?page=loop',
+          ),
+          { status: 200 },
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          makeFeed(
+            '11',
+            'https://blog.hatena.ne.jp/taro/taro.hatenablog.com/atom/entry?page=loop',
+          ),
+          { status: 200 },
+        ),
+      );
+
+    const loopClient = createClient(loopMock);
+    const collected: string[] = [];
+    for await (const entry of loopClient.blog.iterateEntries({ maxPages: 5 })) {
+      collected.push(entry.entryId);
+    }
+    expect(collected).toEqual(['10', '11']);
+    expect(loopMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('iteratePages と getAllPages が固定ページを全件取得できること', async () => {
+    const pageFeed = `<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <entry>
+    <link rel="edit" href="https://blog.hatena.ne.jp/taro/taro.hatenablog.com/atom/page/500" />
+    <title>About</title>
+    <content type="text/html">Hello</content>
+  </entry>
+</feed>`;
+
+    const fetchMock = vi
+      .fn<typeof globalThis.fetch>()
+      .mockResolvedValue(new Response(pageFeed, { status: 200 }));
+    const client = createClient(fetchMock);
+
+    const pages = await client.blog.getAllPages();
+    expect(pages).toHaveLength(1);
+    expect(pages[0]?.type).toBe('page');
+    expect(pages[0]?.entryId).toBe('500');
+  });
 });
