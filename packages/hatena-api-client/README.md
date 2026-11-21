@@ -23,7 +23,7 @@ npm install @thorikiri/hatena-api-client
 GitHub Releases に配布されている tarball（`.tgz`）からインストールできます（`<version>` はリリースバージョンに置き換えてください）。
 
 ```bash
-npm install https://github.com/thorikiri/hatena-tools/releases/download/v<version>/thorikiri-hatena-api-client-<version>.tgz
+npm install https://github.com/thorikiri/hatena-tools/releases/download/hatena-api-client-v<version>/thorikiri-hatena-api-client-<version>.tgz
 ```
 
 ローカルでビルドして別プロジェクトから参照する場合：
