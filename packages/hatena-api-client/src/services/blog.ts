@@ -15,6 +15,7 @@ import type {
   HatenaBlogOEmbed,
   HatenaBlogServiceDocument,
   HatenaBlogTargetOptions,
+  IterateHatenaBlogEntriesOptions,
   UpdateHatenaBlogEntryOptions,
   UpdateHatenaBlogPageOptions,
 } from '../types.js';
@@ -30,6 +31,7 @@ const ATOM_CONTENT_TYPE = 'application/atom+xml; charset=utf-8';
 const BLOG_ALLOWED_HOSTS = ['blog.hatena.ne.jp'] as const;
 const OEMBED_ENDPOINT = 'https://hatena.blog/oembed';
 const DEFAULT_TIMEOUT_MS = 15_000;
+const DEFAULT_MAX_PAGES = 200;
 
 interface RawHatenaBlogOEmbedResponse {
   version?: string;
@@ -275,6 +277,46 @@ export class HatenaBlogClient {
     await this.http.request({ url, method: 'DELETE' });
   }
 
+  private async *iterateItems(
+    resource: 'entry' | 'page',
+    entryType: HatenaBlogEntryType,
+    options?: IterateHatenaBlogEntriesOptions,
+  ): AsyncGenerator<HatenaBlogEntry> {
+    const maxPages = options?.maxPages ?? DEFAULT_MAX_PAGES;
+    let nextUrl = options?.nextUrl;
+    let pageCount = 0;
+    const seenUrls = new Set<string>();
+
+    while (pageCount < maxPages) {
+      const feed = await this.listItems(resource, entryType, {
+        hatenaId: options?.hatenaId,
+        blogId: options?.blogId,
+        nextUrl,
+      });
+      pageCount += 1;
+
+      for (const entry of feed.entries) {
+        yield entry;
+      }
+
+      if (!feed.nextUrl || seenUrls.has(feed.nextUrl)) {
+        break;
+      }
+      seenUrls.add(feed.nextUrl);
+      nextUrl = feed.nextUrl;
+    }
+  }
+
+  private async collectAllItems(
+    generator: AsyncGenerator<HatenaBlogEntry>,
+  ): Promise<HatenaBlogEntry[]> {
+    const results: HatenaBlogEntry[] = [];
+    for await (const item of generator) {
+      results.push(item);
+    }
+    return results;
+  }
+
   // --- 記事（Entry）API ---
 
   /**
@@ -284,6 +326,24 @@ export class HatenaBlogClient {
     options?: GetHatenaBlogEntriesOptions,
   ): Promise<HatenaBlogFeed> {
     return this.listItems('entry', 'post', options);
+  }
+
+  /**
+   * ブログ記事をページネーションを辿りながら順次取得する（AsyncGenerator）
+   */
+  public iterateEntries(
+    options?: IterateHatenaBlogEntriesOptions,
+  ): AsyncGenerator<HatenaBlogEntry> {
+    return this.iterateItems('entry', 'post', options);
+  }
+
+  /**
+   * ブログ記事を全件配列で取得する
+   */
+  public getAllEntries(
+    options?: IterateHatenaBlogEntriesOptions,
+  ): Promise<HatenaBlogEntry[]> {
+    return this.collectAllItems(this.iterateEntries(options));
   }
 
   /**
@@ -331,6 +391,24 @@ export class HatenaBlogClient {
     options?: GetHatenaBlogEntriesOptions,
   ): Promise<HatenaBlogFeed> {
     return this.listItems('page', 'page', options);
+  }
+
+  /**
+   * 固定ページをページネーションを辿りながら順次取得する（AsyncGenerator）
+   */
+  public iteratePages(
+    options?: IterateHatenaBlogEntriesOptions,
+  ): AsyncGenerator<HatenaBlogEntry> {
+    return this.iterateItems('page', 'page', options);
+  }
+
+  /**
+   * 固定ページを全件配列で取得する
+   */
+  public getAllPages(
+    options?: IterateHatenaBlogEntriesOptions,
+  ): Promise<HatenaBlogEntry[]> {
+    return this.collectAllItems(this.iteratePages(options));
   }
 
   /**

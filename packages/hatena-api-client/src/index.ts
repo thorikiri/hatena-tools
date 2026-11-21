@@ -119,6 +119,7 @@ export type {
   HatenaUser,
   HatenaWsseCredentials,
   HttpMethod,
+  IterateHatenaBlogEntriesOptions,
   UpdateFotolifePhotoOptions,
   UpdateHatenaBlogEntryOptions,
   UpdateHatenaBlogPageOptions,
