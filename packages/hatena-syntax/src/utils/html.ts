@@ -53,3 +53,19 @@ export function unescapeHtml(value: string): string {
 export function stripHtmlTags(html: string): string {
   return unescapeHtml(html.replace(/<[^>]+>/g, ''));
 }
+
+/**
+ * URL が安全なスキーム（http / https / 相対パス / フラグメント）か検証し、安全ならトリム済み URL を返す
+ */
+export function sanitizeUrl(url: string): string | null {
+  const trimmed = url.trim();
+  if (!trimmed) return null;
+  if (
+    /^https?:\/\//i.test(trimmed) ||
+    trimmed.startsWith('/') ||
+    trimmed.startsWith('#')
+  ) {
+    return trimmed;
+  }
+  return null;
+}
