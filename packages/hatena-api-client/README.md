@@ -12,8 +12,28 @@ Web 標準 `fetch` API と Web Crypto API のみで実装された、ゼロ依�
 
 ## インストール
 
+> **Note**: 現在 npm レジストリへの公開準備中です（`npm publish` 完了後に以下のコマンドでインストール可能になります）。
+
 ```bash
 npm install @thorikiri/hatena-api-client
+```
+
+### 公開前のインストール方法（GitHub Releases / ローカル）
+
+GitHub Releases に配布されている tarball（`.tgz`）からインストールできます（`<version>` はリリースバージョンに置き換えてください）。
+
+```bash
+npm install https://github.com/thorikiri/hatena-tools/releases/download/v<version>/thorikiri-hatena-api-client-<version>.tgz
+```
+
+ローカルでビルドして別プロジェクトから参照する場合：
+
+```bash
+# hatena-tools リポジトリでビルド
+npm run build
+
+# 利用側プロジェクトでローカルパスを指定してインストール
+npm install ../hatena-tools/packages/hatena-api-client
 ```
 
 ## クイックスタート
