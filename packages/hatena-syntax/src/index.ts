@@ -24,9 +24,17 @@ export {
   htmlToHatena,
 } from './converters/html-to-hatena.js';
 export {
+  type HtmlToMarkdownOptions,
+  htmlToMarkdown,
+} from './converters/html-to-markdown.js';
+export {
   type MarkdownToHatenaOptions,
   markdownToHatena,
 } from './converters/markdown-to-hatena.js';
+export {
+  type MarkdownToHtmlOptions,
+  markdownToHtml,
+} from './converters/markdown-to-html.js';
 export { parseHatena, parseInline } from './parser/parse-hatena.js';
 export { parseHatenaPhotoSyntax } from './parser/photo-syntax.js';
 export {
