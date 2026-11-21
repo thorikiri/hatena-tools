@@ -1,8 +1,33 @@
 {
   "name": "@thorikiri/hatena-api-client",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "はてなブログ・はてなサービス向けAPIクライアント",
+  "license": "MIT",
+  "author": "@thorikiri",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thorikiri/hatena-tools.git",
+    "directory": "packages/hatena-api-client"
+  },
+  "homepage": "https://github.com/thorikiri/hatena-tools/tree/main/packages/hatena-api-client#readme",
+  "bugs": {
+    "url": "https://github.com/thorikiri/hatena-tools/issues"
+  },
+  "keywords": [
+    "hatena",
+    "hatena-blog",
+    "hatena-bookmark",
+    "hatena-fotolife",
+    "hatena-star",
+    "atompub",
+    "oauth",
+    "typescript"
+  ],
   "type": "module",
+  "sideEffects": false,
+  "engines": {
+    "node": ">=22.0.0"
+  },
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
