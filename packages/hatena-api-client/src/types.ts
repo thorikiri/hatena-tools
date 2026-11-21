@@ -194,6 +194,45 @@ export interface FetchHatenaBlogOEmbedOptions {
 }
 
 /**
+ * 公開はてなブログフィードの形式
+ */
+export type HatenaBlogPublicFeedFormat = 'rss' | 'atom';
+
+/**
+ * 公開はてなブログフィードの記事アイテム
+ */
+export interface HatenaBlogPublicFeedItem {
+  title: string;
+  url: string;
+  description: string;
+  content: string | null;
+  author: string | null;
+  categories: string[];
+  publishedAt: Date | null;
+  updatedAt: Date | null;
+}
+
+/**
+ * 公開はてなブログフィードレスポンス
+ */
+export interface HatenaBlogPublicFeed {
+  format: HatenaBlogPublicFeedFormat;
+  title: string | null;
+  description: string | null;
+  blogUrl: string | null;
+  items: HatenaBlogPublicFeedItem[];
+}
+
+/**
+ * fetchHatenaBlogPublicFeed オプション
+ */
+export interface FetchHatenaBlogPublicFeedOptions {
+  format?: HatenaBlogPublicFeedFormat;
+  timeoutMs?: number;
+  fetch?: typeof globalThis.fetch;
+}
+
+/**
  * Atom Entry XML ビルドオプション
  */
 export interface BuildHatenaEntryXmlOptions {

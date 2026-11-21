@@ -32,12 +32,15 @@ export {
 } from './http/retry.js';
 export { validateAllowedHatenaUrl } from './http/url-validator.js';
 export {
+  buildHatenaBlogPublicFeedUrl,
   fetchHatenaBlogOEmbed,
+  fetchHatenaBlogPublicFeed,
   HatenaBlogClient,
   type HatenaBlogClientDefaults,
 } from './services/blog.js';
 export {
   buildHatenaEntryXml,
+  parseHatenaBlogPublicFeedXml,
   parseHatenaCategoriesXml,
   parseHatenaEntriesFeedXml,
   parseHatenaEntryXml,
@@ -81,6 +84,7 @@ export type {
   CreateHatenaBlogEntryOptions,
   DeleteFotolifePhotoOptions,
   FetchHatenaBlogOEmbedOptions,
+  FetchHatenaBlogPublicFeedOptions,
   GetHatenaBlogEntriesOptions,
   GetHatenaBookmarkFavoriteFeedOptions,
   GetHatenaBookmarkMyFeedOptions,
@@ -93,6 +97,9 @@ export type {
   HatenaBlogFeed,
   HatenaBlogFormat,
   HatenaBlogOEmbed,
+  HatenaBlogPublicFeed,
+  HatenaBlogPublicFeedFormat,
+  HatenaBlogPublicFeedItem,
   HatenaBlogServiceDocument,
   HatenaBlogTargetOptions,
   HatenaBookmark,

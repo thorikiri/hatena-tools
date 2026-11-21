@@ -8,11 +8,14 @@ import { validateAllowedHatenaUrl } from '../http/url-validator.js';
 import type {
   CreateHatenaBlogEntryOptions,
   FetchHatenaBlogOEmbedOptions,
+  FetchHatenaBlogPublicFeedOptions,
   GetHatenaBlogEntriesOptions,
   HatenaBlogEntry,
   HatenaBlogEntryType,
   HatenaBlogFeed,
   HatenaBlogOEmbed,
+  HatenaBlogPublicFeed,
+  HatenaBlogPublicFeedFormat,
   HatenaBlogServiceDocument,
   HatenaBlogTargetOptions,
   IterateHatenaBlogEntriesOptions,
@@ -21,6 +24,7 @@ import type {
 } from '../types.js';
 import {
   buildHatenaEntryXml,
+  parseHatenaBlogPublicFeedXml,
   parseHatenaCategoriesXml,
   parseHatenaEntriesFeedXml,
   parseHatenaEntryXml,
@@ -53,6 +57,47 @@ interface RawHatenaBlogOEmbedResponse {
   published?: string;
 }
 
+async function fetchPublicBlogResponse(
+  endpoint: string,
+  options?: { timeoutMs?: number; fetch?: typeof globalThis.fetch },
+): Promise<Response> {
+  const fetchImpl = options?.fetch ?? globalThis.fetch;
+  const timeoutMs = options?.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+
+  let response: Response;
+  try {
+    response = await fetchImpl(endpoint, {
+      method: 'GET',
+      signal: AbortSignal.timeout(timeoutMs),
+    });
+  } catch (error) {
+    if (isTimeoutError(error)) {
+      throw new HatenaApiError(
+        'はてなブログ公開 API への接続がタイムアウトしました',
+        { code: 'TIMEOUT', cause: error },
+      );
+    }
+    throw new HatenaApiError('はてなブログ公開 API への通信に失敗しました', {
+      code: 'NETWORK_ERROR',
+      cause: error,
+    });
+  }
+
+  if (!response.ok) {
+    const responseBody = await response.text().catch(() => undefined);
+    throw new HatenaApiError(
+      `はてなブログ公開 API がエラーを返しました (HTTP ${response.status})`,
+      {
+        code: statusToErrorCode(response.status),
+        status: response.status,
+        responseBody,
+      },
+    );
+  }
+
+  return response;
+}
+
 /**
  * はてなブログの公開記事 URL から oEmbed 情報を取得する（認証不要）
  */
@@ -68,40 +113,7 @@ export async function fetchHatenaBlogOEmbed(
   }
 
   const endpoint = `${OEMBED_ENDPOINT}?url=${encodeURIComponent(trimmedUrl)}&format=json`;
-  const fetchImpl = options?.fetch ?? globalThis.fetch;
-  const timeoutMs = options?.timeoutMs ?? DEFAULT_TIMEOUT_MS;
-
-  let response: Response;
-  try {
-    response = await fetchImpl(endpoint, {
-      method: 'GET',
-      signal: AbortSignal.timeout(timeoutMs),
-    });
-  } catch (error) {
-    if (isTimeoutError(error)) {
-      throw new HatenaApiError(
-        'はてなブログ oEmbed API への接続がタイムアウトしました',
-        { code: 'TIMEOUT', cause: error },
-      );
-    }
-    throw new HatenaApiError('はてなブログ oEmbed API への通信に失敗しました', {
-      code: 'NETWORK_ERROR',
-      cause: error,
-    });
-  }
-
-  if (!response.ok) {
-    const responseBody = await response.text().catch(() => undefined);
-    throw new HatenaApiError(
-      `はてなブログ oEmbed API がエラーを返しました (HTTP ${response.status})`,
-      {
-        code: statusToErrorCode(response.status),
-        status: response.status,
-        responseBody,
-      },
-    );
-  }
-
+  const response = await fetchPublicBlogResponse(endpoint, options);
   const data = (await response.json()) as RawHatenaBlogOEmbedResponse;
 
   return {
@@ -123,6 +135,49 @@ export async function fetchHatenaBlogOEmbed(
     providerUrl: data.provider_url ?? 'https://hatena.blog',
     published: data.published ?? '',
   };
+}
+
+/**
+ * 公開はてなブログのフィード URL を組み立てる
+ */
+export function buildHatenaBlogPublicFeedUrl(
+  blogUrlOrDomain: string,
+  format: HatenaBlogPublicFeedFormat = 'rss',
+): string {
+  const trimmed = blogUrlOrDomain.trim();
+  if (!trimmed) {
+    throw new HatenaApiError(
+      '対象ブログの URL またはドメインが指定されていません。',
+      {
+        code: 'API_ERROR',
+      },
+    );
+  }
+
+  const withProtocol = /^https?:\/\//i.test(trimmed)
+    ? trimmed
+    : `https://${trimmed}`;
+  const parsed = new URL(withProtocol);
+  const suffix = format === 'atom' ? 'feed' : 'rss';
+  const cleanPath = parsed.pathname.replace(/\/+$/, '');
+  if (cleanPath.endsWith('/rss') || cleanPath.endsWith('/feed')) {
+    return `${parsed.origin}${cleanPath}`;
+  }
+  return `${parsed.origin}${cleanPath}/${suffix}`;
+}
+
+/**
+ * 公開はてなブログの RSS / Atom フィードを取得・パースする（認証不要）
+ */
+export async function fetchHatenaBlogPublicFeed(
+  blogUrlOrDomain: string,
+  options?: FetchHatenaBlogPublicFeedOptions,
+): Promise<HatenaBlogPublicFeed> {
+  const format = options?.format ?? 'rss';
+  const endpoint = buildHatenaBlogPublicFeedUrl(blogUrlOrDomain, format);
+  const response = await fetchPublicBlogResponse(endpoint, options);
+  const xml = await response.text();
+  return parseHatenaBlogPublicFeedXml(xml);
 }
 
 export interface HatenaBlogClientDefaults {
@@ -481,6 +536,29 @@ export class HatenaBlogClient {
    */
   public getOEmbed(options: { url: string }): Promise<HatenaBlogOEmbed> {
     return fetchHatenaBlogOEmbed(options.url, {
+      timeoutMs: this.defaults.timeoutMs,
+      fetch: this.defaults.fetch,
+    });
+  }
+
+  // --- 公開フィード API ---
+
+  /**
+   * 公開はてなブログの RSS / Atom フィードを取得する（認証不要）
+   */
+  public getPublicFeed(options?: {
+    blogUrl?: string;
+    format?: HatenaBlogPublicFeedFormat;
+  }): Promise<HatenaBlogPublicFeed> {
+    const target = (options?.blogUrl ?? this.defaults.blogId ?? '').trim();
+    if (!target) {
+      throw new HatenaApiError('blogUrl または blogId が指定されていません。', {
+        code: 'API_ERROR',
+      });
+    }
+
+    return fetchHatenaBlogPublicFeed(target, {
+      format: options?.format,
       timeoutMs: this.defaults.timeoutMs,
       fetch: this.defaults.fetch,
     });
