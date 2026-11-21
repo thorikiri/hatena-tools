@@ -13,6 +13,13 @@ import type {
   HatenaClientOptions,
   HatenaRequestOptions,
 } from '../types.js';
+import {
+  computeBackoffDelayMs,
+  type ResolvedRetryConfig,
+  resolveRetryConfig,
+  shouldRetryStatus,
+  sleepWithSignal,
+} from './retry.js';
 
 const DEFAULT_TIMEOUT_MS = 15_000;
 
@@ -22,18 +29,91 @@ const DEFAULT_TIMEOUT_MS = 15_000;
 export class HatenaFetchClient {
   private readonly auth: HatenaAuthConfig;
   private readonly defaultTimeoutMs: number;
+  private readonly defaultRetry: ResolvedRetryConfig;
   private readonly fetchImpl: typeof globalThis.fetch;
 
   constructor(options: HatenaClientOptions) {
     this.auth = options.auth;
     this.defaultTimeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+    this.defaultRetry = resolveRetryConfig(options.retry);
     this.fetchImpl = options.fetch ?? globalThis.fetch;
   }
 
   /**
-   * 認証ヘッダーを付与して HTTP リクエストを実行する
+   * 認証ヘッダーを付与して HTTP リクエストを実行する（リトライ・バックオフ対応）
    */
   public async request(options: HatenaRequestOptions): Promise<Response> {
+    const retryConfig =
+      options.retry !== undefined
+        ? resolveRetryConfig(options.retry)
+        : this.defaultRetry;
+
+    let attempt = 0;
+    while (true) {
+      try {
+        const result = await this.executeOnce(options);
+        if (result.ok) {
+          return result.response;
+        }
+
+        if (
+          attempt < retryConfig.maxRetries &&
+          shouldRetryStatus(result.response.status)
+        ) {
+          const delayMs = computeBackoffDelayMs(
+            attempt,
+            retryConfig,
+            result.response.headers.get('retry-after'),
+          );
+          attempt += 1;
+          await sleepWithSignal(delayMs, options.signal);
+          continue;
+        }
+
+        const responseBody = await result.response
+          .text()
+          .catch(() => undefined);
+        throw new HatenaApiError(
+          `はてなAPIがエラーを返しました (HTTP ${result.response.status})`,
+          {
+            code: statusToErrorCode(result.response.status),
+            status: result.response.status,
+            responseBody,
+          },
+        );
+      } catch (error) {
+        if (error instanceof HatenaApiError) {
+          throw error;
+        }
+
+        const abortedByCaller = Boolean(options.signal?.aborted);
+        const mappedError = isTimeoutError(error)
+          ? new HatenaApiError('はてなAPIへの接続がタイムアウトしました', {
+              code: 'TIMEOUT',
+              cause: error,
+            })
+          : new HatenaApiError('はてなAPIへの通信に失敗しました', {
+              code: 'NETWORK_ERROR',
+              cause: error,
+            });
+
+        if (!abortedByCaller && attempt < retryConfig.maxRetries) {
+          const delayMs = computeBackoffDelayMs(attempt, retryConfig);
+          attempt += 1;
+          await sleepWithSignal(delayMs, options.signal);
+          continue;
+        }
+
+        throw mappedError;
+      }
+    }
+  }
+
+  private async executeOnce(
+    options: HatenaRequestOptions,
+  ): Promise<
+    { ok: true; response: Response } | { ok: false; response: Response }
+  > {
     const headers: Record<string, string> = {
       ...options.headers,
     };
@@ -75,40 +155,17 @@ export class HatenaFetchClient {
       ? AbortSignal.any([options.signal, timeoutSignal])
       : timeoutSignal;
 
-    let response: Response;
-    try {
-      response = await this.fetchImpl(options.url, {
-        method: options.method,
-        headers,
-        body,
-        signal,
-      });
-    } catch (error) {
-      if (isTimeoutError(error)) {
-        throw new HatenaApiError('はてなAPIへの接続がタイムアウトしました', {
-          code: 'TIMEOUT',
-          cause: error,
-        });
-      }
-      throw new HatenaApiError('はてなAPIへの通信に失敗しました', {
-        code: 'NETWORK_ERROR',
-        cause: error,
-      });
-    }
+    const response = await this.fetchImpl(options.url, {
+      method: options.method,
+      headers,
+      body,
+      signal,
+    });
 
     if (!response.ok) {
-      const responseBody = await response.text().catch(() => undefined);
-      throw new HatenaApiError(
-        `はてなAPIがエラーを返しました (HTTP ${response.status})`,
-        {
-          code: statusToErrorCode(response.status),
-          status: response.status,
-          responseBody,
-        },
-      );
+      return { ok: false, response };
     }
-
-    return response;
+    return { ok: true, response };
   }
 
   /**

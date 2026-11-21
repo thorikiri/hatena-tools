@@ -23,6 +23,15 @@ export interface HatenaWsseCredentials {
  */
 export type HatenaAuthConfig = HatenaOAuth1Credentials | HatenaWsseCredentials;
 
+export interface HatenaRetryOptions {
+  /** 最大リトライ回数（デフォルト: 0） */
+  maxRetries?: number;
+  /** 初回待機時間（ミリ秒、デフォルト: 500） */
+  baseDelayMs?: number;
+  /** 最大待機時間（ミリ秒、デフォルト: 10000） */
+  maxDelayMs?: number;
+}
+
 /**
  * HatenaClient の初期化オプション
  */
@@ -35,6 +44,8 @@ export interface HatenaClientOptions {
   blogId?: string;
   /** デフォルトのタイムアウト時間（ミリ秒）。デフォルトは 15000ms */
   timeoutMs?: number;
+  /** リトライ設定（429 / 5xx / 一時通信エラー向け） */
+  retry?: HatenaRetryOptions | false;
   /** カスタム fetch 実装（テストや特殊ランタイム向け） */
   fetch?: typeof globalThis.fetch;
 }
@@ -60,6 +71,8 @@ export interface HatenaRequestOptions {
   formParams?: Record<string, string | string[]>;
   /** 個別のタイムアウト時間（ミリ秒） */
   timeoutMs?: number;
+  /** リクエスト単位のリトライ設定（false で無効化） */
+  retry?: HatenaRetryOptions | false;
   /** キャンセル用 AbortSignal */
   signal?: AbortSignal;
 }

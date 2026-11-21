@@ -23,6 +23,13 @@ export {
   statusToErrorCode,
 } from './errors.js';
 export { HatenaFetchClient } from './http/fetch-client.js';
+export {
+  computeBackoffDelayMs,
+  parseRetryAfterMs,
+  type ResolvedRetryConfig,
+  resolveRetryConfig,
+  shouldRetryStatus,
+} from './http/retry.js';
 export { validateAllowedHatenaUrl } from './http/url-validator.js';
 export {
   fetchHatenaBlogOEmbed,
@@ -110,6 +117,7 @@ export type {
   HatenaProfileImageResult,
   HatenaProfileImageSize,
   HatenaRequestOptions,
+  HatenaRetryOptions,
   HatenaStarBlogCount,
   HatenaStarColoredGroup,
   HatenaStarCountImageResult,
