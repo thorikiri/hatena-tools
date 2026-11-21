@@ -3,6 +3,7 @@ import type {
   HatenaDefinitionItem,
   HatenaDocument,
   HatenaFootnoteDefinition,
+  HatenaHeadingLevel,
   HatenaInlineNode,
   HatenaListBlock,
   HatenaListItem,
@@ -16,8 +17,8 @@ interface ParseContext {
   nextFootnoteId: number;
 }
 
-const HEADING_REGEX = /^(\*{1,3})\s+(.+)$/;
-const HEADING_NO_SPACE_REGEX = /^(\*{1,3})([^\s*].*)$/;
+const HEADING_REGEX = /^(\*{1,6})\s+(.+)$/;
+const HEADING_NO_SPACE_REGEX = /^(\*{1,6})([^\s*].*)$/;
 const SUPER_PRE_START_REGEX = /^>\|([a-zA-Z0-9_+-]*)\|$/;
 const SUPER_PRE_END_REGEX = /^\|\|<$/;
 const QUOTE_START_REGEX =
@@ -380,11 +381,11 @@ function parseBlocks(lines: string[], ctx: ParseContext): HatenaBlockNode[] {
       continue;
     }
 
-    // 6. 見出し: *, **, ***
+    // 6. 見出し: * 〜 ******
     const headingMatch =
       HEADING_REGEX.exec(trimmed) ?? HEADING_NO_SPACE_REGEX.exec(trimmed);
     if (headingMatch?.[1] && headingMatch[2]) {
-      const level = headingMatch[1].length as 1 | 2 | 3;
+      const level = headingMatch[1].length as HatenaHeadingLevel;
       blocks.push({
         type: 'heading',
         level,

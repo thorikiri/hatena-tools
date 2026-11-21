@@ -31,6 +31,7 @@ describe('parseHatena', () => {
 * 大見出し
 ** 中見出し
 *** 小見出し
+**** レベル4見出し
 
 本文テキストです。
 
@@ -38,17 +39,18 @@ describe('parseHatena', () => {
 
 ----`);
 
-    expect(doc.blocks).toHaveLength(7);
+    expect(doc.blocks).toHaveLength(8);
     expect(doc.blocks[0]).toEqual({ type: 'toc' });
     expect(doc.blocks[1]).toMatchObject({ type: 'heading', level: 1 });
     expect(doc.blocks[2]).toMatchObject({ type: 'heading', level: 2 });
     expect(doc.blocks[3]).toMatchObject({ type: 'heading', level: 3 });
-    expect(doc.blocks[4]).toEqual({
+    expect(doc.blocks[4]).toMatchObject({ type: 'heading', level: 4 });
+    expect(doc.blocks[5]).toEqual({
       type: 'paragraph',
       children: [{ type: 'text', value: '本文テキストです。' }],
     });
-    expect(doc.blocks[5]).toEqual({ type: 'more', label: 'もっと読む' });
-    expect(doc.blocks[6]).toEqual({ type: 'hr' });
+    expect(doc.blocks[6]).toEqual({ type: 'more', label: 'もっと読む' });
+    expect(doc.blocks[7]).toEqual({ type: 'hr' });
   });
 
   it('リスト（箇条書き・番号付き・ネスト）と定義リストをパースすること', () => {

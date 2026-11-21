@@ -3,6 +3,7 @@ export type {
   HatenaDefinitionItem,
   HatenaDocument,
   HatenaFootnoteDefinition,
+  HatenaHeadingLevel,
   HatenaInlineNode,
   HatenaListBlock,
   HatenaListItem,
