@@ -10,6 +10,23 @@ export type {
   HatenaPhotoInfo,
   ParseHatenaOptions,
 } from './ast/types.js';
+export {
+  type HatenaHtmlRenderers,
+  type HatenaToHtmlOptions,
+  hatenaToHtml,
+} from './converters/hatena-to-html.js';
+export {
+  type HatenaToMarkdownOptions,
+  hatenaToMarkdown,
+} from './converters/hatena-to-markdown.js';
+export {
+  type HtmlToHatenaOptions,
+  htmlToHatena,
+} from './converters/html-to-hatena.js';
+export {
+  type MarkdownToHatenaOptions,
+  markdownToHatena,
+} from './converters/markdown-to-hatena.js';
 export { parseHatena, parseInline } from './parser/parse-hatena.js';
 export { parseHatenaPhotoSyntax } from './parser/photo-syntax.js';
 export {
