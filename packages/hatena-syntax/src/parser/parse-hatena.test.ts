@@ -301,4 +301,16 @@ const x = *not heading*;
       ],
     });
   });
+
+  it('question 記法（角括弧あり/なし）をパースすること', () => {
+    const doc = parseHatena('question:123456:title と [question:789012]');
+    expect(doc.blocks[0]).toEqual({
+      type: 'paragraph',
+      children: [
+        { type: 'embed', provider: 'question', id: '123456', option: 'title' },
+        { type: 'text', value: ' と ' },
+        { type: 'embed', provider: 'question', id: '789012' },
+      ],
+    });
+  });
 });
