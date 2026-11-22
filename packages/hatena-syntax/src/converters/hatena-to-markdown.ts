@@ -149,6 +149,8 @@ function renderBlock(
       return '<!--more-->';
     case 'hr':
       return '---';
+    case 'br':
+      return '<br />';
     case 'comment':
       return '';
   }

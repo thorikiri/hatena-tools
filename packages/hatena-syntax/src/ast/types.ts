@@ -103,6 +103,7 @@ export type HatenaBlockNode =
   | { type: 'toc' }
   | { type: 'more'; label?: string; super?: boolean }
   | { type: 'hr' }
+  | { type: 'br' }
   | { type: 'comment'; value: string };
 
 /**
