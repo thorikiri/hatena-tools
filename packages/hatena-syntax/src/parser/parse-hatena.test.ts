@@ -191,4 +191,22 @@ const x = *not heading*;
       },
     ]);
   });
+
+  it('行頭に半角スペースがある場合は見出し・リスト等として解釈しないこと', () => {
+    const doc = parseHatena(` * 見出しではない
+ - リストではない
+ :定義:ではない`);
+
+    expect(doc.blocks).toEqual([
+      {
+        type: 'paragraph',
+        children: [
+          {
+            type: 'text',
+            value: ' * 見出しではない\n - リストではない\n :定義:ではない',
+          },
+        ],
+      },
+    ]);
+  });
 });
