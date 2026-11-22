@@ -285,4 +285,20 @@ const x = *not heading*;
       ],
     });
   });
+
+  it('isbn 記法および角括弧なし asin/isbn 記法をパースすること', () => {
+    const doc = parseHatena(
+      'isbn:4774192392:title と asin:B000000001 と [isbn:978-4-7741-9239-0]',
+    );
+    expect(doc.blocks[0]).toEqual({
+      type: 'paragraph',
+      children: [
+        { type: 'embed', provider: 'isbn', id: '4774192392', option: 'title' },
+        { type: 'text', value: ' と ' },
+        { type: 'embed', provider: 'asin', id: 'B000000001' },
+        { type: 'text', value: ' と ' },
+        { type: 'embed', provider: 'isbn', id: '978-4-7741-9239-0' },
+      ],
+    });
+  });
 });
