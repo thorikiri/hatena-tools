@@ -40,7 +40,8 @@ export type HatenaInlineNode =
         | 'isbn'
         | 'hatenaId'
         | 'question'
-        | 'google';
+        | 'google'
+        | 'wikipedia';
       id: string;
       option?: string;
     }

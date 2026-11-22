@@ -325,4 +325,12 @@ const x = *not heading*;
       ],
     });
   });
+
+  it('wikipedia 記法（[wikipedia:...]）をパースすること', () => {
+    const doc = parseHatena('[wikipedia:はてなブログ]');
+    expect(doc.blocks[0]).toEqual({
+      type: 'paragraph',
+      children: [{ type: 'embed', provider: 'wikipedia', id: 'はてなブログ' }],
+    });
+  });
 });

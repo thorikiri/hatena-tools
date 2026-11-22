@@ -189,6 +189,10 @@ function renderInlineNode(
         const googleUrl = `https://www.google.com/search?${tbm}q=${encodeURIComponent(node.id)}`;
         return `<a href="${escapeHtml(googleUrl)}" class="hatena-google-link">google:${escapeHtml(node.id)}</a>`;
       }
+      if (node.provider === 'wikipedia') {
+        const wikiUrl = `https://ja.wikipedia.org/wiki/${encodeURIComponent(node.id)}`;
+        return `<a href="${escapeHtml(wikiUrl)}" class="hatena-wikipedia-link">wikipedia:${escapeHtml(node.id)}</a>`;
+      }
       const normalizedId = node.id.replace(/-/g, '');
       const amazonUrl = `https://www.amazon.co.jp/dp/${encodeURIComponent(normalizedId)}`;
       const labelPrefix = node.provider === 'isbn' ? 'ISBN' : 'ASIN';

@@ -206,6 +206,18 @@ export function parseInline(
           continue;
         }
 
+        // Wikipedia 記法: [wikipedia:...]
+        const wikiMatch = /^wikipedia:(.+)$/.exec(bracketInner);
+        if (wikiMatch?.[1]) {
+          nodes.push({
+            type: 'embed',
+            provider: 'wikipedia',
+            id: wikiMatch[1],
+          });
+          index += closeIdx + 1;
+          continue;
+        }
+
         // Google 検索記法: [google:...], [google:image:...], [google:news:...]
         const googleMatch = /^google:(?:(image|news):)?(.+)$/.exec(
           bracketInner,
