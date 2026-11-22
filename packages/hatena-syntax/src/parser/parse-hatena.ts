@@ -69,6 +69,16 @@ export function parseInline(
       }
     }
 
+    // 0.5. 自動リンク停止記法: []...[]
+    if (rest.startsWith('[]')) {
+      const endIdx = rest.indexOf('[]', 2);
+      if (endIdx !== -1) {
+        pushText(rest.slice(2, endIdx));
+        index += endIdx + 2;
+        continue;
+      }
+    }
+
     // 1. 脚注: ((...))
     if (rest.startsWith('((')) {
       const endIdx = rest.indexOf('))', 2);

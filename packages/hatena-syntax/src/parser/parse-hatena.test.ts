@@ -251,4 +251,20 @@ const x = *not heading*;
       { type: 'more', label: '続き', super: true },
     ]);
   });
+
+  it('自動リンク停止記法（[]...[]）で内部を展開せずテキスト化すること', () => {
+    const doc = parseHatena(
+      '停止 []https://example.com[] と [][f:id:taro:20261121120000p:plain][] です。',
+    );
+    expect(doc.blocks[0]).toEqual({
+      type: 'paragraph',
+      children: [
+        {
+          type: 'text',
+          value:
+            '停止 https://example.com と [f:id:taro:20261121120000p:plain] です。',
+        },
+      ],
+    });
+  });
 });
