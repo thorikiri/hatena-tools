@@ -267,4 +267,22 @@ const x = *not heading*;
       ],
     });
   });
+
+  it('id 記法（角括弧あり/なし・オプション付き）をパースすること', () => {
+    const doc = parseHatena('id:taro と [id:hanako:image] と android:id:test');
+    expect(doc.blocks[0]).toEqual({
+      type: 'paragraph',
+      children: [
+        { type: 'embed', provider: 'hatenaId', id: 'taro' },
+        { type: 'text', value: ' と ' },
+        {
+          type: 'embed',
+          provider: 'hatenaId',
+          id: 'hanako',
+          option: 'image',
+        },
+        { type: 'text', value: ' と android:id:test' },
+      ],
+    });
+  });
 });

@@ -206,6 +206,22 @@ export function parseInline(
           continue;
         }
 
+        // はてな ID 記法: [id:username], [id:username:image], [id:username:detail], [id:username:detail:large]
+        const idBracketMatch =
+          /^id:([a-zA-Z0-9_-]+)(?::(image|detail(?::large)?))?$/.exec(
+            bracketInner,
+          );
+        if (idBracketMatch?.[1]) {
+          nodes.push({
+            type: 'embed',
+            provider: 'hatenaId',
+            id: idBracketMatch[1],
+            ...(idBracketMatch[2] ? { option: idBracketMatch[2] } : {}),
+          });
+          index += closeIdx + 1;
+          continue;
+        }
+
         // URL リンク記法: [https://...:title=...], [https://...:embed], [https://...:bookmark], [https://...]
         const urlMatch =
           /^(https?:\/\/[^\s\]]+?)(?::(title(?:=([^\]]+))?|bookmark|embed))?$/.exec(
@@ -246,6 +262,25 @@ export function parseInline(
       }
     }
 
+    // 5.6. 角括弧なしのはてな ID 記法: id:username(:image|:detail|:detail:large)
+    if (
+      rest.startsWith('id:') &&
+      (index === 0 || !/[a-zA-Z0-9_:-]/.test(text[index - 1] ?? ''))
+    ) {
+      const bareIdMatch =
+        /^id:([a-zA-Z0-9_-]+)(?::(image|detail(?::large)?))?/.exec(rest);
+      if (bareIdMatch?.[1]) {
+        nodes.push({
+          type: 'embed',
+          provider: 'hatenaId',
+          id: bareIdMatch[1],
+          ...(bareIdMatch[2] ? { option: bareIdMatch[2] } : {}),
+        });
+        index += bareIdMatch[0].length;
+        continue;
+      }
+    }
+
     // 6. 裸の URL（autoLink 有効時）
     if (
       ctx.autoLink &&
@@ -264,7 +299,7 @@ export function parseInline(
     }
 
     // 通常の1文字を進む（次の特殊トークン開始文字までまとめて進める）
-    const nextSpecial = rest.slice(1).search(/[([`*~hf<]/);
+    const nextSpecial = rest.slice(1).search(/[([`*~hf<i]/);
     if (nextSpecial === -1) {
       pushText(rest);
       break;
