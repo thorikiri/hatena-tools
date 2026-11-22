@@ -34,7 +34,7 @@ const LIST_REGEX = /^([-+]+)\s+(.+)$/;
 const DEFINITION_REGEX = /^:([^:\n]+):(.*)$/;
 const TABLE_ROW_REGEX = /^\|(.+)\|$/;
 const TOC_REGEX = /^\[:contents\]$/;
-const MORE_REGEX = /^====(?:\[([^\]]+)\])?$/;
+const MORE_REGEX = /^(={4,})(?:\[([^\]]+)\])?$/;
 const HR_REGEX = /^-{4,}$/;
 
 /**
@@ -517,12 +517,13 @@ function parseBlocks(lines: string[], ctx: ParseContext): HatenaBlockNode[] {
       continue;
     }
 
-    // 4. 続きを読む: ==== / ====[label]
+    // 4. 続きを読む: ==== / ===== / ====[label]
     const moreMatch = MORE_REGEX.exec(trimmed);
-    if (moreMatch) {
+    if (moreMatch?.[1]) {
       blocks.push({
         type: 'more',
-        ...(moreMatch[1] ? { label: moreMatch[1] } : {}),
+        ...(moreMatch[2] ? { label: moreMatch[2] } : {}),
+        ...(moreMatch[1].length >= 5 ? { super: true } : {}),
       });
       i += 1;
       continue;

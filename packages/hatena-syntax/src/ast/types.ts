@@ -101,7 +101,7 @@ export type HatenaBlockNode =
   | { type: 'pre'; children: HatenaInlineNode[] }
   | { type: 'raw'; value: string }
   | { type: 'toc' }
-  | { type: 'more'; label?: string }
+  | { type: 'more'; label?: string; super?: boolean }
   | { type: 'hr' }
   | { type: 'comment'; value: string };
 

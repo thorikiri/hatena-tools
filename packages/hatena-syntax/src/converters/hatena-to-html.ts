@@ -316,9 +316,10 @@ function renderBlock(
     case 'more': {
       const custom = options.renderers?.more?.(block);
       if (custom !== undefined) return custom;
+      const prefix = block.super ? 'super-more' : 'more';
       return block.label
-        ? `<!--more:${escapeHtml(block.label)}-->`
-        : '<!--more-->';
+        ? `<!--${prefix}:${escapeHtml(block.label)}-->`
+        : `<!--${prefix}-->`;
     }
     case 'hr':
       return '<hr />';
