@@ -62,10 +62,11 @@ export function hatenaPhotoToHtml(
   const parsed = parseHatenaPhotoSyntax(syntax);
   if (!parsed) return '';
 
-  const alt = options?.alt ?? parsed.syntax;
+  const alt = options?.alt ?? parsed.alt ?? parsed.syntax;
   const attrs = [
     `src="${escapeHtml(parsed.imageUrl)}"`,
     `alt="${escapeHtml(alt)}"`,
+    ...(parsed.title ? [`title="${escapeHtml(parsed.title)}"`] : []),
     ...(options?.className ? [`class="${escapeHtml(options.className)}"`] : []),
     ...(options?.loading ? [`loading="${options.loading}"`] : []),
   ];
@@ -83,7 +84,7 @@ export function hatenaPhotoToMarkdown(
   const parsed = parseHatenaPhotoSyntax(syntax);
   if (!parsed) return '';
 
-  const alt = options?.alt ?? parsed.syntax;
+  const alt = options?.alt ?? parsed.alt ?? parsed.syntax;
   return `![${alt}](${parsed.imageUrl})`;
 }
 

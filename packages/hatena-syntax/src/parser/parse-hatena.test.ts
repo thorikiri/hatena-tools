@@ -209,4 +209,24 @@ const x = *not heading*;
       },
     ]);
   });
+
+  it('角括弧なしの fotolife 記法と :title= / :alt= オプションをパースすること', () => {
+    const doc = parseHatena(
+      '画像 f:id:taro:20261121120000p:plain:title=題名:alt=説明 です。',
+    );
+    expect(doc.blocks[0]).toEqual({
+      type: 'paragraph',
+      children: [
+        { type: 'text', value: '画像 ' },
+        expect.objectContaining({
+          type: 'photo',
+          user: 'taro',
+          ext: 'png',
+          title: '題名',
+          alt: '説明',
+        }),
+        { type: 'text', value: ' です。' },
+      ],
+    });
+  });
 });

@@ -142,7 +142,8 @@ function renderInlineNode(
 
       const attrs = [
         `src="${escapeHtml(node.imageUrl)}"`,
-        `alt="${escapeHtml(node.syntax)}"`,
+        `alt="${escapeHtml(node.alt ?? node.syntax)}"`,
+        ...(node.title ? [`title="${escapeHtml(node.title)}"`] : []),
         ...(options.photoClassName
           ? [`class="${escapeHtml(options.photoClassName)}"`]
           : []),

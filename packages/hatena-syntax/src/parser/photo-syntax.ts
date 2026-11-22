@@ -8,7 +8,7 @@ const HATENA_EXT_MAP: Record<string, string> = {
 };
 
 const PHOTO_SYNTAX_REGEX =
-  /\[?f:id:([a-zA-Z0-9_-]+):(\d{8})(\d{6})([a-zA-Z0-9])((?::[\w\d-]+)*)\]?/;
+  /\[?f:id:([a-zA-Z0-9_-]+):(\d{8})(\d{6})([a-zA-Z0-9])((?::[^:\]\s]+)*)\]?/;
 
 /**
  * はてなフォトライフ記法（例: `[f:id:user:20261121120000j:image]`）をパースして画像URLやメタ情報を抽出する
@@ -29,6 +29,18 @@ export function parseHatenaPhotoSyntax(
   const imageUrl = `https://cdn-ak.f.st-hatena.com/images/fotolife/${initial}/${user}/${date}/${photoId}.${ext}`;
   const syntax = `f:id:${user}:${photoId}${extCode}${optionsStr}`;
 
+  let title: string | undefined;
+  let alt: string | undefined;
+  if (optionsStr) {
+    for (const part of optionsStr.split(':').filter(Boolean)) {
+      if (part.startsWith('title=')) {
+        title = part.slice('title='.length);
+      } else if (part.startsWith('alt=')) {
+        alt = part.slice('alt='.length);
+      }
+    }
+  }
+
   return {
     user,
     date,
@@ -37,6 +49,8 @@ export function parseHatenaPhotoSyntax(
     ext,
     photoId,
     options: optionsStr,
+    ...(title !== undefined ? { title } : {}),
+    ...(alt !== undefined ? { alt } : {}),
     imageUrl,
     syntax,
   };

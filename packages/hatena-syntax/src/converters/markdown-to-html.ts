@@ -95,7 +95,8 @@ function renderInlineMarkdown(
 
             const attrs = [
               `src="${escapeHtml(photo.imageUrl)}"`,
-              `alt="${escapeHtml(photo.syntax)}"`,
+              `alt="${escapeHtml(photo.alt ?? photo.syntax)}"`,
+              ...(photo.title ? [`title="${escapeHtml(photo.title)}"`] : []),
               ...(ctx.options.photoClassName
                 ? [`class="${escapeHtml(ctx.options.photoClassName)}"`]
                 : []),
