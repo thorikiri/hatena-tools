@@ -283,9 +283,14 @@ function parseListBlock(
   return { node: rootBlock, nextIndex: idx };
 }
 
+function hasLeadingWhitespace(line: string): boolean {
+  return /^[ \t]/.test(line);
+}
+
 function isBlockBoundary(line: string): boolean {
-  const trimmed = line.trim();
-  if (!trimmed) return true;
+  if (line.trim() === '') return true;
+  if (hasLeadingWhitespace(line)) return false;
+  const trimmed = line.trimEnd();
   return (
     HEADING_REGEX.test(trimmed) ||
     HEADING_NO_SPACE_REGEX.test(trimmed) ||
@@ -306,12 +311,27 @@ function parseBlocks(lines: string[], ctx: ParseContext): HatenaBlockNode[] {
 
   while (i < lines.length) {
     const line = lines[i] ?? '';
-    const trimmed = line.trim();
-
-    if (!trimmed) {
+    if (line.trim() === '') {
       i += 1;
       continue;
     }
+
+    if (hasLeadingWhitespace(line)) {
+      const paraLines: string[] = [];
+      while (i < lines.length && !isBlockBoundary(lines[i] ?? '')) {
+        paraLines.push(lines[i] ?? '');
+        i += 1;
+      }
+      if (paraLines.length > 0) {
+        blocks.push({
+          type: 'paragraph',
+          children: parseInline(paraLines.join('\n'), ctx),
+        });
+      }
+      continue;
+    }
+
+    const trimmed = line.trimEnd();
 
     // 1. スーパー pre 記法: >|lang| ... ||<
     const superPreMatch = SUPER_PRE_START_REGEX.exec(trimmed);
@@ -410,7 +430,9 @@ function parseBlocks(lines: string[], ctx: ParseContext): HatenaBlockNode[] {
     if (DEFINITION_REGEX.test(trimmed)) {
       const items: HatenaDefinitionItem[] = [];
       while (i < lines.length) {
-        const defMatch = DEFINITION_REGEX.exec((lines[i] ?? '').trim());
+        const current = lines[i] ?? '';
+        if (hasLeadingWhitespace(current)) break;
+        const defMatch = DEFINITION_REGEX.exec(current.trimEnd());
         if (!defMatch?.[1]) break;
         items.push({
           term: parseInline(defMatch[1].trim(), ctx),
@@ -426,7 +448,9 @@ function parseBlocks(lines: string[], ctx: ParseContext): HatenaBlockNode[] {
     if (TABLE_ROW_REGEX.test(trimmed)) {
       const rows: HatenaTableCell[][] = [];
       while (i < lines.length) {
-        const rowMatch = TABLE_ROW_REGEX.exec((lines[i] ?? '').trim());
+        const current = lines[i] ?? '';
+        if (hasLeadingWhitespace(current)) break;
+        const rowMatch = TABLE_ROW_REGEX.exec(current.trimEnd());
         if (!rowMatch?.[1]) break;
         const rawCells = rowMatch[1].split('|');
         const cells: HatenaTableCell[] = rawCells.map((rawCell) => {
