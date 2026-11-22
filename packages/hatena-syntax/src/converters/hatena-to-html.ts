@@ -323,6 +323,8 @@ function renderBlock(
     }
     case 'hr':
       return '<hr />';
+    case 'br':
+      return '<br />';
     case 'comment':
       return '';
   }

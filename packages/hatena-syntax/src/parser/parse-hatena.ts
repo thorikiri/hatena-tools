@@ -369,7 +369,17 @@ function parseBlocks(lines: string[], ctx: ParseContext): HatenaBlockNode[] {
   while (i < lines.length) {
     const line = lines[i] ?? '';
     if (line.trim() === '') {
-      i += 1;
+      let emptyCount = 0;
+      while (i < lines.length && (lines[i] ?? '').trim() === '') {
+        emptyCount += 1;
+        i += 1;
+      }
+      if (blocks.length > 0 && i < lines.length && emptyCount >= 2) {
+        const brCount = Math.floor(emptyCount / 2);
+        for (let b = 0; b < brCount; b += 1) {
+          blocks.push({ type: 'br' });
+        }
+      }
       continue;
     }
 

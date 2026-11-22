@@ -141,4 +141,9 @@ const a = "<script>alert(1)</script>";
       }).trim(),
     ).toBe('&lt;div class=&quot;x&quot;&gt;raw&lt;/div&gt;');
   });
+
+  it('連続空行2つで <br /> が挿入されること', () => {
+    const html = hatenaToHtml('段落1\n\n\n段落2');
+    expect(html).toBe('<p>段落1</p>\n<br />\n<p>段落2</p>');
+  });
 });
