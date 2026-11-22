@@ -142,6 +142,8 @@ function renderBlock(
       return '<!--more-->';
     case 'hr':
       return '---';
+    case 'comment':
+      return '';
   }
 }
 
@@ -157,6 +159,7 @@ export function hatenaToMarkdown(
   const document = parseHatena(hatenaText, options.parseOptions);
   const blocksMd = document.blocks
     .map((block) => renderBlock(block, options))
+    .filter(Boolean)
     .join('\n\n');
 
   if (options.renderFootnotes === false || document.footnotes.length === 0) {

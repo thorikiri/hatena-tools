@@ -55,6 +55,15 @@ export function parseInline(
   while (index < text.length) {
     const rest = text.slice(index);
 
+    // 0. 下書き記法（コメント）: <!-- ... -->
+    if (rest.startsWith('<!--')) {
+      const endIdx = rest.indexOf('-->', 4);
+      if (endIdx !== -1) {
+        index += endIdx + 3;
+        continue;
+      }
+    }
+
     // 1. 脚注: ((...))
     if (rest.startsWith('((')) {
       const endIdx = rest.indexOf('))', 2);
@@ -240,7 +249,7 @@ export function parseInline(
     }
 
     // 通常の1文字を進む（次の特殊トークン開始文字までまとめて進める）
-    const nextSpecial = rest.slice(1).search(/[([`*~hf]/);
+    const nextSpecial = rest.slice(1).search(/[([`*~hf<]/);
     if (nextSpecial === -1) {
       pushText(rest);
       break;
@@ -339,7 +348,8 @@ function isBlockBoundary(line: string): boolean {
     TABLE_ROW_REGEX.test(trimmed) ||
     TOC_REGEX.test(trimmed) ||
     MORE_REGEX.test(trimmed) ||
-    HR_REGEX.test(trimmed)
+    HR_REGEX.test(trimmed) ||
+    trimmed.startsWith('<!--')
   );
 }
 
@@ -370,6 +380,27 @@ function parseBlocks(lines: string[], ctx: ParseContext): HatenaBlockNode[] {
     }
 
     const trimmed = line.trimEnd();
+
+    // 0. 下書き記法（コメントブロック）: <!-- ... -->
+    if (trimmed.startsWith('<!--')) {
+      const commentLines: string[] = [];
+      let closed = false;
+      while (i < lines.length) {
+        const current = lines[i] ?? '';
+        commentLines.push(current);
+        i += 1;
+        if (current.includes('-->')) {
+          closed = true;
+          break;
+        }
+      }
+      if (closed) {
+        const raw = commentLines.join('\n').trim();
+        const value = raw.slice(4, raw.lastIndexOf('-->')).trim();
+        blocks.push({ type: 'comment', value });
+        continue;
+      }
+    }
 
     // 1. スーパー pre 記法: >|lang| ... ||<
     const superPreMatch = SUPER_PRE_START_REGEX.exec(trimmed);

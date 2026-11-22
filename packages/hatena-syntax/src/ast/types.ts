@@ -100,7 +100,8 @@ export type HatenaBlockNode =
   | { type: 'codeBlock'; lang: string; code: string }
   | { type: 'toc' }
   | { type: 'more'; label?: string }
-  | { type: 'hr' };
+  | { type: 'hr' }
+  | { type: 'comment'; value: string };
 
 /**
  * 脚注定義
