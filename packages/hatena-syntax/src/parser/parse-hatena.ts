@@ -7,6 +7,7 @@ import type {
   HatenaInlineNode,
   HatenaListBlock,
   HatenaListItem,
+  HatenaTableCell,
   ParseHatenaOptions,
 } from '../ast/types.js';
 import { parseHatenaPhotoSyntax } from './photo-syntax.js';
@@ -26,6 +27,7 @@ const QUOTE_START_REGEX =
 const QUOTE_END_REGEX = /^<<$/;
 const LIST_REGEX = /^([-+]+)\s+(.+)$/;
 const DEFINITION_REGEX = /^:([^:\n]+):(.*)$/;
+const TABLE_ROW_REGEX = /^\|(.+)\|$/;
 const TOC_REGEX = /^\[:contents\]$/;
 const MORE_REGEX = /^====(?:\[([^\]]+)\])?$/;
 const HR_REGEX = /^-{4,}$/;
@@ -291,6 +293,7 @@ function isBlockBoundary(line: string): boolean {
     QUOTE_START_REGEX.test(trimmed) ||
     LIST_REGEX.test(trimmed) ||
     DEFINITION_REGEX.test(trimmed) ||
+    TABLE_ROW_REGEX.test(trimmed) ||
     TOC_REGEX.test(trimmed) ||
     MORE_REGEX.test(trimmed) ||
     HR_REGEX.test(trimmed)
@@ -416,6 +419,28 @@ function parseBlocks(lines: string[], ctx: ParseContext): HatenaBlockNode[] {
         i += 1;
       }
       blocks.push({ type: 'definitionList', items });
+      continue;
+    }
+
+    // 8.5. 表組み記法: |...| / |*...|
+    if (TABLE_ROW_REGEX.test(trimmed)) {
+      const rows: HatenaTableCell[][] = [];
+      while (i < lines.length) {
+        const rowMatch = TABLE_ROW_REGEX.exec((lines[i] ?? '').trim());
+        if (!rowMatch?.[1]) break;
+        const rawCells = rowMatch[1].split('|');
+        const cells: HatenaTableCell[] = rawCells.map((rawCell) => {
+          const isHeader = rawCell.startsWith('*');
+          const content = (isHeader ? rawCell.slice(1) : rawCell).trim();
+          return {
+            header: isHeader,
+            children: parseInline(content, ctx),
+          };
+        });
+        rows.push(cells);
+        i += 1;
+      }
+      blocks.push({ type: 'table', rows });
       continue;
     }
 

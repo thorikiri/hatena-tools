@@ -52,4 +52,11 @@ const x = *not bold*;
     expect(hatena).toContain('脚注テスト((脚注の中身))。');
     expect(hatena).not.toContain('[^1]:');
   });
+
+  it('GFM テーブルをはてな表組み記法に変換すること', () => {
+    const hatena = markdownToHatena(`| 列A | 列B |
+| --- | --- |
+| 値1 | 値2 |`);
+    expect(hatena).toBe('|*列A|*列B|\n|値1|値2|');
+  });
 });

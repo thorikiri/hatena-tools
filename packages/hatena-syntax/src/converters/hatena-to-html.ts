@@ -254,6 +254,28 @@ function renderBlock(
         .join('\n');
       return `<dl>\n${items}\n</dl>`;
     }
+    case 'table': {
+      if (block.rows.length === 0) return '<table></table>';
+      const firstRow = block.rows[0] ?? [];
+      const hasHeaderRow =
+        firstRow.length > 0 && firstRow.every((cell) => cell.header);
+      const renderRow = (row: typeof firstRow) =>
+        `<tr>${row
+          .map((cell) => {
+            const tag = cell.header ? 'th' : 'td';
+            return `<${tag}>${renderInlineNodes(cell.children, options)}</${tag}>`;
+          })
+          .join('')}</tr>`;
+
+      if (hasHeaderRow) {
+        const thead = `<thead>\n${renderRow(firstRow)}\n</thead>`;
+        const bodyRows = block.rows.slice(1).map(renderRow).join('\n');
+        const tbody = bodyRows ? `\n<tbody>\n${bodyRows}\n</tbody>` : '';
+        return `<table>\n${thead}${tbody}\n</table>`;
+      }
+      const tbody = `<tbody>\n${block.rows.map(renderRow).join('\n')}\n</tbody>`;
+      return `<table>\n${tbody}\n</table>`;
+    }
     case 'blockquote': {
       const childrenHtml = block.children
         .map((child) => renderBlock(child, document, options, state))

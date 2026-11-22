@@ -99,4 +99,12 @@ const a = "<script>alert(1)</script>";
     expect(html).toContain('<h1 class="custom">見出し</h1>');
     expect(html).toContain('<div data-lang="js">console.log(1)</div>');
   });
+
+  it('表組み記法（|...| / |*...|）を HTML テーブルに変換すること', () => {
+    const html = hatenaToHtml(`|*列1|*列2|
+|値1|値2|`);
+    expect(html).toBe(
+      '<table>\n<thead>\n<tr><th>列1</th><th>列2</th></tr>\n</thead>\n<tbody>\n<tr><td>値1</td><td>値2</td></tr>\n</tbody>\n</table>',
+    );
+  });
 });

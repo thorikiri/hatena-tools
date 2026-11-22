@@ -8,6 +8,7 @@ export type {
   HatenaListBlock,
   HatenaListItem,
   HatenaPhotoInfo,
+  HatenaTableCell,
   ParseHatenaOptions,
 } from './ast/types.js';
 export {

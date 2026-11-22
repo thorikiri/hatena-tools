@@ -177,6 +177,37 @@ export function markdownToHatena(
       continue;
     }
 
+    // 5.5. GFM テーブル
+    if (
+      line.includes('|') &&
+      i + 1 < lines.length &&
+      /^\s*\|?(?:\s*:?-{3,}:?\s*\|)+\s*:?-{3,}:?\s*\|?\s*$/.test(
+        lines[i + 1] ?? '',
+      )
+    ) {
+      const splitRow = (rowLine: string) =>
+        rowLine
+          .trim()
+          .replace(/^\|/, '')
+          .replace(/\|$/, '')
+          .split('|')
+          .map((c) => convertInlineMarkdown(c.trim(), footnotes));
+
+      const headers = splitRow(line);
+      out.push(`|${headers.map((h) => `*${h}`).join('|')}|`);
+      i += 2;
+      while (
+        i < lines.length &&
+        (lines[i] ?? '').includes('|') &&
+        (lines[i] ?? '').trim() !== ''
+      ) {
+        const cells = splitRow(lines[i] ?? '');
+        out.push(`|${cells.join('|')}|`);
+        i += 1;
+      }
+      continue;
+    }
+
     // 6. 引用ブロック (> ...)
     if (/^>\s?/.test(line)) {
       const quoteLines: string[] = [];

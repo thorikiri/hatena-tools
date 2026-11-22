@@ -106,6 +106,15 @@ function renderBlock(
             `${renderInlineNodes(item.term)}\n: ${renderInlineNodes(item.description)}`,
         )
         .join('\n\n');
+    case 'table': {
+      if (block.rows.length === 0) return '';
+      const toRow = (row: (typeof block.rows)[number]) =>
+        `| ${row.map((cell) => renderInlineNodes(cell.children)).join(' | ')} |`;
+      const firstRow = block.rows[0] ?? [];
+      const separator = `| ${firstRow.map(() => '---').join(' | ')} |`;
+      const rest = block.rows.slice(1).map(toRow);
+      return [toRow(firstRow), separator, ...rest].join('\n');
+    }
     case 'blockquote': {
       const inner = block.children
         .map((child) => renderBlock(child, options))
