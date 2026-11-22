@@ -314,6 +314,8 @@ function renderBlock(
     }
     case 'hr':
       return '<hr />';
+    case 'comment':
+      return '';
   }
 }
 
@@ -331,6 +333,7 @@ export function hatenaToHtml(
 
   const blocksHtml = document.blocks
     .map((block) => renderBlock(block, document, options, state))
+    .filter(Boolean)
     .join('\n');
 
   if (options.renderFootnotes === false || document.footnotes.length === 0) {

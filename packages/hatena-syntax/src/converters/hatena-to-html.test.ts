@@ -114,4 +114,10 @@ const a = "<script>alert(1)</script>";
       '<p><span class="hatena-tex" data-tex="x &lt; y">\\(x &lt; y\\)</span> と <span class="hatena-tex" data-tex="a + b">\\(a + b\\)</span></p>',
     );
   });
+
+  it('下書き記法（<!-- ... -->）を出力から除外すること', () => {
+    const html = hatenaToHtml(`<!-- 下書きメモ -->
+本文<!-- インラインメモ -->です。`);
+    expect(html).toBe('<p>本文です。</p>');
+  });
 });
