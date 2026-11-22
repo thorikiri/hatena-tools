@@ -72,6 +72,19 @@ function renderInlineMarkdown(
 
   // 2. はてな独自記法（有効時）
   if (ctx.options.enableHatenaSyntax !== false) {
+    // tex 記法: [$ ... $] / [tex:...]
+    result = result.replace(/\[\$([\s\S]*?)\$\]/g, (_m, tex: string) => {
+      const val = tex.trim();
+      return stash(
+        `<span class="hatena-tex" data-tex="${escapeHtml(val)}">\\(${escapeHtml(val)}\\)</span>`,
+      );
+    });
+    result = result.replace(/\[tex:([^\]\n]+)\]/g, (_m, tex: string) =>
+      stash(
+        `<span class="hatena-tex" data-tex="${escapeHtml(tex)}">\\(${escapeHtml(tex)}\\)</span>`,
+      ),
+    );
+
     // 脚注 ((...))
     result = result.replace(/\(\(([^)\n]+)\)\)/g, (_m, inner: string) => {
       const fnHtml = renderInlineMarkdown(inner, ctx);

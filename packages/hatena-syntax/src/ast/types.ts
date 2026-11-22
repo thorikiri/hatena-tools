@@ -37,6 +37,7 @@ export type HatenaInlineNode =
       id: string;
       option?: string;
     }
+  | { type: 'tex'; value: string; syntax: 'tex' | 'dollar' }
   | { type: 'footnote'; id: number; children: HatenaInlineNode[] };
 
 /**

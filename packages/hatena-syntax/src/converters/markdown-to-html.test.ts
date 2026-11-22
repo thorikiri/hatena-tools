@@ -87,4 +87,11 @@ const x = "<span>";
     expect(html).not.toContain('href="javascript:');
     expect(html).not.toContain('<img');
   });
+
+  it('Markdown 内の [tex:...] / [$ ... $] を展開すること', () => {
+    const html = markdownToHtml('数式 [tex:a * b] と [$ c + d $]');
+    expect(html).toBe(
+      '<p>数式 <span class="hatena-tex" data-tex="a * b">\\(a * b\\)</span> と <span class="hatena-tex" data-tex="c + d">\\(c + d\\)</span></p>',
+    );
+  });
 });

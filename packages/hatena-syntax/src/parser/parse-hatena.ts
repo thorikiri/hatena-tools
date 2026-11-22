@@ -102,11 +102,35 @@ export function parseInline(
       }
     }
 
-    // 5. 角括弧記法: [f:id:...], [youtube:...], [twitter:...], [asin:...], [https://...]
+    // 5. 角括弧記法: [$ ... $], [tex:...], [f:id:...], [youtube:...], [twitter:...], [asin:...], [https://...]
+    if (rest.startsWith('[$')) {
+      const endIdx = rest.indexOf('$]', 2);
+      if (endIdx !== -1) {
+        nodes.push({
+          type: 'tex',
+          value: rest.slice(2, endIdx).trim(),
+          syntax: 'dollar',
+        });
+        index += endIdx + 2;
+        continue;
+      }
+    }
+
     if (rest.startsWith('[')) {
       const closeIdx = rest.indexOf(']');
       if (closeIdx !== -1) {
         const bracketInner = rest.slice(1, closeIdx);
+
+        // tex 記法
+        if (bracketInner.startsWith('tex:')) {
+          nodes.push({
+            type: 'tex',
+            value: bracketInner.slice(4),
+            syntax: 'tex',
+          });
+          index += closeIdx + 1;
+          continue;
+        }
 
         // フォトライフ記法
         if (bracketInner.startsWith('f:id:')) {

@@ -61,6 +61,8 @@ function renderInlineNode(node: HatenaInlineNode): string {
         return `https://twitter.com/i/status/${node.id}`;
       }
       return `https://www.amazon.co.jp/dp/${node.id}`;
+    case 'tex':
+      return `$${node.value}$`;
     case 'footnote':
       return `[^${node.id}]`;
   }
