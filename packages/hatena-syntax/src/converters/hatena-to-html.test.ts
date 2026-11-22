@@ -120,4 +120,13 @@ const a = "<script>alert(1)</script>";
 本文<!-- インラインメモ -->です。`);
     expect(html).toBe('<p>本文です。</p>');
   });
+
+  it('pre 記法（>| ... |<）でインラインリンクが有効になること', () => {
+    const html = hatenaToHtml(`>|
+詳細は [https://example.com:title=こちら]
+|<`);
+    expect(html).toBe(
+      '<pre>詳細は <a href="https://example.com">こちら</a></pre>',
+    );
+  });
 });

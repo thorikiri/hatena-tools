@@ -22,6 +22,9 @@ const HEADING_REGEX = /^(\*{1,6})\s+(.+)$/;
 const HEADING_NO_SPACE_REGEX = /^(\*{1,6})([^\s*].*)$/;
 const SUPER_PRE_START_REGEX = /^>\|([a-zA-Z0-9_+-]*)\|$/;
 const SUPER_PRE_END_REGEX = /^\|\|<$/;
+const PRE_START_REGEX = /^>\|$/;
+const PRE_END_REGEX = /^\|<$/;
+const PRE_INLINE_REGEX = /^>\|(.+)\|<$/;
 const QUOTE_START_REGEX =
   /^>(?:(https?:\/\/[^\s:>]+)(?::title=([^>\r\n]+))?)?>$/;
 const QUOTE_END_REGEX = /^<<$/;
@@ -342,6 +345,8 @@ function isBlockBoundary(line: string): boolean {
     HEADING_REGEX.test(trimmed) ||
     HEADING_NO_SPACE_REGEX.test(trimmed) ||
     SUPER_PRE_START_REGEX.test(trimmed) ||
+    PRE_START_REGEX.test(trimmed) ||
+    PRE_INLINE_REGEX.test(trimmed) ||
     QUOTE_START_REGEX.test(trimmed) ||
     LIST_REGEX.test(trimmed) ||
     DEFINITION_REGEX.test(trimmed) ||
@@ -420,6 +425,31 @@ function parseBlocks(lines: string[], ctx: ParseContext): HatenaBlockNode[] {
         type: 'codeBlock',
         lang,
         code: codeLines.join('\n'),
+      });
+      continue;
+    }
+
+    // 1.5. pre 記法: >| ... |<
+    const preInlineMatch = PRE_INLINE_REGEX.exec(trimmed);
+    if (preInlineMatch?.[1] !== undefined) {
+      blocks.push({
+        type: 'pre',
+        children: parseInline(preInlineMatch[1], ctx),
+      });
+      i += 1;
+      continue;
+    }
+    if (PRE_START_REGEX.test(trimmed)) {
+      const preLines: string[] = [];
+      i += 1;
+      while (i < lines.length && !PRE_END_REGEX.test((lines[i] ?? '').trim())) {
+        preLines.push(lines[i] ?? '');
+        i += 1;
+      }
+      if (i < lines.length) i += 1; // |< をスキップ
+      blocks.push({
+        type: 'pre',
+        children: parseInline(preLines.join('\n'), ctx),
       });
       continue;
     }
