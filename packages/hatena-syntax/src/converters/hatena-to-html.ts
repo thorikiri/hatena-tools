@@ -179,6 +179,16 @@ function renderInlineNode(
         const questionUrl = `https://q.hatena.ne.jp/${encodeURIComponent(node.id)}`;
         return `<a href="${escapeHtml(questionUrl)}" class="hatena-question-link">question:${escapeHtml(node.id)}</a>`;
       }
+      if (node.provider === 'google') {
+        const tbm =
+          node.option === 'image'
+            ? 'tbm=isch&'
+            : node.option === 'news'
+              ? 'tbm=nws&'
+              : '';
+        const googleUrl = `https://www.google.com/search?${tbm}q=${encodeURIComponent(node.id)}`;
+        return `<a href="${escapeHtml(googleUrl)}" class="hatena-google-link">google:${escapeHtml(node.id)}</a>`;
+      }
       const normalizedId = node.id.replace(/-/g, '');
       const amazonUrl = `https://www.amazon.co.jp/dp/${encodeURIComponent(normalizedId)}`;
       const labelPrefix = node.provider === 'isbn' ? 'ISBN' : 'ASIN';

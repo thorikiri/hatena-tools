@@ -206,6 +206,21 @@ export function parseInline(
           continue;
         }
 
+        // Google 検索記法: [google:...], [google:image:...], [google:news:...]
+        const googleMatch = /^google:(?:(image|news):)?(.+)$/.exec(
+          bracketInner,
+        );
+        if (googleMatch?.[2]) {
+          nodes.push({
+            type: 'embed',
+            provider: 'google',
+            id: googleMatch[2],
+            ...(googleMatch[1] ? { option: googleMatch[1] } : {}),
+          });
+          index += closeIdx + 1;
+          continue;
+        }
+
         // 人力検索はてな question 記法
         const questionBracketMatch =
           /^question:(\d+)(?::(title|detail|image))?$/.exec(bracketInner);

@@ -313,4 +313,16 @@ const x = *not heading*;
       ],
     });
   });
+
+  it('google 記法（[google:...] / :image / :news）をパースすること', () => {
+    const doc = parseHatena('[google:TypeScript] と [google:image:猫]');
+    expect(doc.blocks[0]).toEqual({
+      type: 'paragraph',
+      children: [
+        { type: 'embed', provider: 'google', id: 'TypeScript' },
+        { type: 'text', value: ' と ' },
+        { type: 'embed', provider: 'google', id: '猫', option: 'image' },
+      ],
+    });
+  });
 });

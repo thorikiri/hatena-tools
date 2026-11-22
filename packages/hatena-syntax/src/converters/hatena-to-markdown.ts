@@ -66,6 +66,15 @@ function renderInlineNode(node: HatenaInlineNode): string {
       if (node.provider === 'question') {
         return `[question:${node.id}](https://q.hatena.ne.jp/${node.id})`;
       }
+      if (node.provider === 'google') {
+        const tbm =
+          node.option === 'image'
+            ? 'tbm=isch&'
+            : node.option === 'news'
+              ? 'tbm=nws&'
+              : '';
+        return `[google:${node.id}](https://www.google.com/search?${tbm}q=${encodeURIComponent(node.id)})`;
+      }
       return `https://www.amazon.co.jp/dp/${node.id.replace(/-/g, '')}`;
     case 'tex':
       return `$${node.value}$`;
