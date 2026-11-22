@@ -98,6 +98,7 @@ export type HatenaBlockNode =
       children: HatenaBlockNode[];
     }
   | { type: 'codeBlock'; lang: string; code: string }
+  | { type: 'pre'; children: HatenaInlineNode[] }
   | { type: 'toc' }
   | { type: 'more'; label?: string }
   | { type: 'hr' }

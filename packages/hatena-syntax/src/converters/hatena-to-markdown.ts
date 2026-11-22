@@ -136,6 +136,11 @@ function renderBlock(
       const fence = getFence(block.code);
       return `${fence}${block.lang}\n${block.code}\n${fence}`;
     }
+    case 'pre': {
+      const content = renderInlineNodes(block.children);
+      const fence = getFence(content);
+      return `${fence}\n${content}\n${fence}`;
+    }
     case 'toc':
       return '[:contents]';
     case 'more':

@@ -303,6 +303,8 @@ function renderBlock(
         : '';
       return `<pre><code${classAttr}>${escapeHtml(block.code)}</code></pre>`;
     }
+    case 'pre':
+      return `<pre>${renderInlineNodes(block.children, options)}</pre>`;
     case 'toc':
       return renderToc(document, options);
     case 'more': {
