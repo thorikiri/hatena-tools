@@ -52,6 +52,8 @@ export interface HatenaToHtmlOptions {
   photoLoading?: 'lazy' | 'eager';
   /** フォトライフ画像に付与する class 属性 */
   photoClassName?: string;
+  /** p タグ停止記法（>< ... ><）内の生 HTML 出力を許可するか（デフォルト: true） */
+  allowRawHtml?: boolean;
   /** 要素ごとのカスタムレンダラーフック（undefined を返すとデフォルト出力を使用） */
   renderers?: HatenaHtmlRenderers;
 }
@@ -305,6 +307,10 @@ function renderBlock(
     }
     case 'pre':
       return `<pre>${renderInlineNodes(block.children, options)}</pre>`;
+    case 'raw':
+      return options.allowRawHtml === false
+        ? escapeHtml(block.value)
+        : block.value;
     case 'toc':
       return renderToc(document, options);
     case 'more': {

@@ -25,6 +25,8 @@ const SUPER_PRE_END_REGEX = /^\|\|<$/;
 const PRE_START_REGEX = /^>\|$/;
 const PRE_END_REGEX = /^\|<$/;
 const PRE_INLINE_REGEX = /^>\|(.+)\|<$/;
+const RAW_BLOCK_BOUNDARY_REGEX = /^><$/;
+const RAW_BLOCK_INLINE_REGEX = /^><(.+)><$/;
 const QUOTE_START_REGEX =
   /^>(?:(https?:\/\/[^\s:>]+)(?::title=([^>\r\n]+))?)?>$/;
 const QUOTE_END_REGEX = /^<<$/;
@@ -347,6 +349,8 @@ function isBlockBoundary(line: string): boolean {
     SUPER_PRE_START_REGEX.test(trimmed) ||
     PRE_START_REGEX.test(trimmed) ||
     PRE_INLINE_REGEX.test(trimmed) ||
+    RAW_BLOCK_BOUNDARY_REGEX.test(trimmed) ||
+    RAW_BLOCK_INLINE_REGEX.test(trimmed) ||
     QUOTE_START_REGEX.test(trimmed) ||
     LIST_REGEX.test(trimmed) ||
     DEFINITION_REGEX.test(trimmed) ||
@@ -450,6 +454,34 @@ function parseBlocks(lines: string[], ctx: ParseContext): HatenaBlockNode[] {
       blocks.push({
         type: 'pre',
         children: parseInline(preLines.join('\n'), ctx),
+      });
+      continue;
+    }
+
+    // 1.7. p タグ停止記法: >< ... ><
+    const rawInlineMatch = RAW_BLOCK_INLINE_REGEX.exec(trimmed);
+    if (rawInlineMatch?.[1] !== undefined) {
+      blocks.push({
+        type: 'raw',
+        value: rawInlineMatch[1],
+      });
+      i += 1;
+      continue;
+    }
+    if (RAW_BLOCK_BOUNDARY_REGEX.test(trimmed)) {
+      const rawLines: string[] = [];
+      i += 1;
+      while (
+        i < lines.length &&
+        !RAW_BLOCK_BOUNDARY_REGEX.test((lines[i] ?? '').trim())
+      ) {
+        rawLines.push(lines[i] ?? '');
+        i += 1;
+      }
+      if (i < lines.length) i += 1; // >< をスキップ
+      blocks.push({
+        type: 'raw',
+        value: rawLines.join('\n'),
       });
       continue;
     }

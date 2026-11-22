@@ -141,6 +141,8 @@ function renderBlock(
       const fence = getFence(content);
       return `${fence}\n${content}\n${fence}`;
     }
+    case 'raw':
+      return block.value;
     case 'toc':
       return '[:contents]';
     case 'more':
