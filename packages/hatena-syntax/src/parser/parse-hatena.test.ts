@@ -243,4 +243,12 @@ const x = *not heading*;
       ],
     });
   });
+
+  it('スーパー続きを読む記法（=====）をパースすること', () => {
+    const doc = parseHatena('=====\n=====[続き]');
+    expect(doc.blocks).toEqual([
+      { type: 'more', super: true },
+      { type: 'more', label: '続き', super: true },
+    ]);
+  });
 });
