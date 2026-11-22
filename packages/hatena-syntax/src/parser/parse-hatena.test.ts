@@ -167,4 +167,28 @@ const x = *not heading*;
       { id: 1, children: [{ type: 'text', value: '脚注テキスト' }] },
     ]);
   });
+
+  it('表組み記法（|...| / |*...|）をパースすること', () => {
+    const doc = parseHatena(`|*名前|*役割|
+|太郎|エンジニア|`);
+
+    expect(doc.blocks).toEqual([
+      {
+        type: 'table',
+        rows: [
+          [
+            { header: true, children: [{ type: 'text', value: '名前' }] },
+            { header: true, children: [{ type: 'text', value: '役割' }] },
+          ],
+          [
+            { header: false, children: [{ type: 'text', value: '太郎' }] },
+            {
+              header: false,
+              children: [{ type: 'text', value: 'エンジニア' }],
+            },
+          ],
+        ],
+      },
+    ]);
+  });
 });

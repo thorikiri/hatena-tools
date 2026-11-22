@@ -304,6 +304,41 @@ function convertBlocks(
       continue;
     }
 
+    // テーブル <table>
+    if (node.tag === 'table') {
+      const tableLines: string[] = [];
+      const collectRows = (children: HtmlNode[]) => {
+        for (const child of children) {
+          if (child.type !== 'element') continue;
+          if (child.tag === 'tr') {
+            const cells: string[] = [];
+            for (const cell of child.children) {
+              if (
+                cell.type === 'element' &&
+                (cell.tag === 'th' || cell.tag === 'td')
+              ) {
+                const text = convertInlineNodes(
+                  cell.children,
+                  footnotes,
+                ).trim();
+                cells.push(cell.tag === 'th' ? `*${text}` : text);
+              }
+            }
+            if (cells.length > 0) {
+              tableLines.push(`|${cells.join('|')}|`);
+            }
+          } else {
+            collectRows(child.children);
+          }
+        }
+      };
+      collectRows(node.children);
+      if (tableLines.length > 0) {
+        blocks.push(tableLines.join('\n'));
+      }
+      continue;
+    }
+
     // 定義リスト <dl>
     if (node.tag === 'dl') {
       const dlLines: string[] = [];

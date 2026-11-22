@@ -63,6 +63,14 @@ export interface HatenaDefinitionItem {
 }
 
 /**
+ * テーブルセル
+ */
+export interface HatenaTableCell {
+  header: boolean;
+  children: HatenaInlineNode[];
+}
+
+/**
  * 見出しレベル（HTML h1〜h6 / Markdown #〜###### との相互変換を考慮し 1〜6 をサポート）
  */
 export type HatenaHeadingLevel = 1 | 2 | 3 | 4 | 5 | 6;
@@ -79,6 +87,7 @@ export type HatenaBlockNode =
   | { type: 'paragraph'; children: HatenaInlineNode[] }
   | HatenaListBlock
   | { type: 'definitionList'; items: HatenaDefinitionItem[] }
+  | { type: 'table'; rows: HatenaTableCell[][] }
   | {
       type: 'blockquote';
       citeUrl?: string;

@@ -51,4 +51,11 @@ describe('htmlToHatena', () => {
     expect(restored).toContain('本文((脚注内容))です。');
     expect(restored).toContain(':用語:説明文');
   });
+
+  it('HTML テーブルをはてな表組み記法に変換すること', () => {
+    const hatena = htmlToHatena(
+      '<table><thead><tr><th>A</th><th>B</th></tr></thead><tbody><tr><td>1</td><td>2</td></tr></tbody></table>',
+    );
+    expect(hatena).toBe('|*A|*B|\n|1|2|');
+  });
 });

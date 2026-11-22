@@ -53,4 +53,10 @@ const x = 1;
     expect(md).toContain('````md\n```ts\nconst x = 1;\n```\n````');
     expect(md).toContain('> 引用文\n>\n> 出典: [引用元](https://example.com)');
   });
+
+  it('表組み記法を GFM テーブルに変換すること', () => {
+    const md = hatenaToMarkdown(`|*A|*B|
+|1|2|`);
+    expect(md).toBe('| A | B |\n| --- | --- |\n| 1 | 2 |');
+  });
 });
