@@ -184,6 +184,20 @@ export function parseInline(
       }
     }
 
+    // 5.5. 角括弧なしのフォトライフ記法: f:id:...
+    if (rest.startsWith('f:id:')) {
+      const barePhotoMatch =
+        /^(f:id:[a-zA-Z0-9_-]+:\d{14}[a-zA-Z0-9](?::[^:\s\]<>]+)*)/.exec(rest);
+      if (barePhotoMatch?.[1]) {
+        const photo = parseHatenaPhotoSyntax(barePhotoMatch[1]);
+        if (photo) {
+          nodes.push({ type: 'photo', ...photo });
+          index += barePhotoMatch[1].length;
+          continue;
+        }
+      }
+    }
+
     // 6. 裸の URL（autoLink 有効時）
     if (
       ctx.autoLink &&
@@ -202,7 +216,7 @@ export function parseInline(
     }
 
     // 通常の1文字を進む（次の特殊トークン開始文字までまとめて進める）
-    const nextSpecial = rest.slice(1).search(/[([`*~h]/);
+    const nextSpecial = rest.slice(1).search(/[([`*~hf]/);
     if (nextSpecial === -1) {
       pushText(rest);
       break;

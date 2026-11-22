@@ -52,7 +52,7 @@ function renderInlineNode(node: HatenaInlineNode): string {
       }
       return node.url;
     case 'photo':
-      return `![${node.syntax}](${node.imageUrl})`;
+      return `![${node.alt ?? node.syntax}](${node.imageUrl})`;
     case 'embed':
       if (node.provider === 'youtube') {
         return `https://www.youtube.com/watch?v=${node.id}`;

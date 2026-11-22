@@ -48,4 +48,15 @@ describe('photo unit converters', () => {
       htmlImgToHatenaPhoto('<img src="https://example.com/a.jpg" />'),
     ).toBeNull();
   });
+
+  it(':title= や :alt= オプションおよび角括弧なし記法を変換できること', () => {
+    const withTitleAlt =
+      'f:id:taro:20261121120000j:plain:title=写真タイトル:alt=代替テキスト';
+    expect(hatenaPhotoToHtml(withTitleAlt)).toBe(
+      `<img src="${cdnUrl}" alt="代替テキスト" title="写真タイトル" />`,
+    );
+    expect(hatenaPhotoToMarkdown(withTitleAlt)).toBe(
+      `![代替テキスト](${cdnUrl})`,
+    );
+  });
 });

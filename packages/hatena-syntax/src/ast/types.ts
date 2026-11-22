@@ -9,6 +9,8 @@ export interface HatenaPhotoInfo {
   ext: string;
   photoId: string;
   options: string;
+  title?: string;
+  alt?: string;
   imageUrl: string;
   syntax: string;
 }
