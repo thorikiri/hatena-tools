@@ -129,4 +129,16 @@ const a = "<script>alert(1)</script>";
       '<pre>詳細は <a href="https://example.com">こちら</a></pre>',
     );
   });
+
+  it('p タグ停止記法（>< ... ><）が <p> でラップされずに出力されること', () => {
+    const html = hatenaToHtml(`><
+<div class="custom">生HTML</div>
+><`);
+    expect(html).toBe('<div class="custom">生HTML</div>');
+    expect(
+      hatenaToHtml('>< <div class="x">raw</div> ><', {
+        allowRawHtml: false,
+      }).trim(),
+    ).toBe('&lt;div class=&quot;x&quot;&gt;raw&lt;/div&gt;');
+  });
 });
