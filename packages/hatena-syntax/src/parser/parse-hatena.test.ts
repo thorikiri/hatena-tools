@@ -229,4 +229,18 @@ const x = *not heading*;
       ],
     });
   });
+
+  it('tex 記法（[tex:...] / [$ ... $]）をパースし、内部の * や _ を誤装飾しないこと', () => {
+    const doc = parseHatena('数式 [tex:a_1 * b_2] と [$ x^2 + y^2 $] です。');
+    expect(doc.blocks[0]).toEqual({
+      type: 'paragraph',
+      children: [
+        { type: 'text', value: '数式 ' },
+        { type: 'tex', value: 'a_1 * b_2', syntax: 'tex' },
+        { type: 'text', value: ' と ' },
+        { type: 'tex', value: 'x^2 + y^2', syntax: 'dollar' },
+        { type: 'text', value: ' です。' },
+      ],
+    });
+  });
 });

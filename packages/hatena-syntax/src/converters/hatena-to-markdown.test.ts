@@ -59,4 +59,10 @@ const x = 1;
 |1|2|`);
     expect(md).toBe('| A | B |\n| --- | --- |\n| 1 | 2 |');
   });
+
+  it('tex 記法をインライン数式 Markdown に変換すること', () => {
+    expect(hatenaToMarkdown('[tex:E = mc^2] と [$ a_1 * b_2 $]')).toBe(
+      '$E = mc^2$ と $a_1 * b_2$',
+    );
+  });
 });

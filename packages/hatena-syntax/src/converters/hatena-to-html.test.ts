@@ -107,4 +107,11 @@ const a = "<script>alert(1)</script>";
       '<table>\n<thead>\n<tr><th>列1</th><th>列2</th></tr>\n</thead>\n<tbody>\n<tr><td>値1</td><td>値2</td></tr>\n</tbody>\n</table>',
     );
   });
+
+  it('tex 記法を HTML へエスケープしつつ変換すること', () => {
+    const html = hatenaToHtml('[tex:x < y] と [$ a + b $]');
+    expect(html).toBe(
+      '<p><span class="hatena-tex" data-tex="x &lt; y">\\(x &lt; y\\)</span> と <span class="hatena-tex" data-tex="a + b">\\(a + b\\)</span></p>',
+    );
+  });
 });

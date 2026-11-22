@@ -83,6 +83,8 @@ function inlineToPlainText(nodes: HatenaInlineNode[]): string {
           return node.syntax;
         case 'embed':
           return `${node.provider}:${node.id}`;
+        case 'tex':
+          return node.value;
         case 'footnote':
           return '';
         default:
@@ -166,6 +168,8 @@ function renderInlineNode(
       const amazonUrl = `https://www.amazon.co.jp/dp/${encodeURIComponent(node.id)}`;
       return `<a href="${escapeHtml(amazonUrl)}" class="hatena-asin-link">ASIN: ${escapeHtml(node.id)}</a>`;
     }
+    case 'tex':
+      return `<span class="hatena-tex" data-tex="${escapeHtml(node.value)}">\\(${escapeHtml(node.value)}\\)</span>`;
     case 'footnote':
       return `<sup id="fnref-${node.id}"><a href="#fn-${node.id}" class="footnote-ref">*${node.id}</a></sup>`;
   }
