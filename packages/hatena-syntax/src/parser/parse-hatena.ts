@@ -206,6 +206,22 @@ export function parseInline(
           continue;
         }
 
+        // 人力検索はてな question 記法
+        const questionBracketMatch =
+          /^question:(\d+)(?::(title|detail|image))?$/.exec(bracketInner);
+        if (questionBracketMatch?.[1]) {
+          nodes.push({
+            type: 'embed',
+            provider: 'question',
+            id: questionBracketMatch[1],
+            ...(questionBracketMatch[2]
+              ? { option: questionBracketMatch[2] }
+              : {}),
+          });
+          index += closeIdx + 1;
+          continue;
+        }
+
         // はてな ID 記法: [id:username], [id:username:image], [id:username:detail], [id:username:detail:large]
         const idBracketMatch =
           /^id:([a-zA-Z0-9_-]+)(?::(image|detail(?::large)?))?$/.exec(
@@ -302,6 +318,25 @@ export function parseInline(
       }
     }
 
+    // 5.8. 角括弧なしの question 記法
+    if (
+      rest.startsWith('question:') &&
+      (index === 0 || !/[a-zA-Z0-9_:-]/.test(text[index - 1] ?? ''))
+    ) {
+      const bareQuestionMatch =
+        /^question:(\d+)(?::(title|detail|image))?/.exec(rest);
+      if (bareQuestionMatch?.[1]) {
+        nodes.push({
+          type: 'embed',
+          provider: 'question',
+          id: bareQuestionMatch[1],
+          ...(bareQuestionMatch[2] ? { option: bareQuestionMatch[2] } : {}),
+        });
+        index += bareQuestionMatch[0].length;
+        continue;
+      }
+    }
+
     // 6. 裸の URL（autoLink 有効時）
     if (
       ctx.autoLink &&
@@ -320,7 +355,7 @@ export function parseInline(
     }
 
     // 通常の1文字を進む（次の特殊トークン開始文字までまとめて進める）
-    const nextSpecial = rest.slice(1).search(/[([`*~hf<ia]/);
+    const nextSpecial = rest.slice(1).search(/[([`*~hf<iaq]/);
     if (nextSpecial === -1) {
       pushText(rest);
       break;

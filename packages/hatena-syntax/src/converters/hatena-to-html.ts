@@ -175,6 +175,10 @@ function renderInlineNode(
         }
         return `<a href="${escapeHtml(profileUrl)}" class="hatena-id-link">id:${escapeHtml(node.id)}</a>`;
       }
+      if (node.provider === 'question') {
+        const questionUrl = `https://q.hatena.ne.jp/${encodeURIComponent(node.id)}`;
+        return `<a href="${escapeHtml(questionUrl)}" class="hatena-question-link">question:${escapeHtml(node.id)}</a>`;
+      }
       const normalizedId = node.id.replace(/-/g, '');
       const amazonUrl = `https://www.amazon.co.jp/dp/${encodeURIComponent(normalizedId)}`;
       const labelPrefix = node.provider === 'isbn' ? 'ISBN' : 'ASIN';
