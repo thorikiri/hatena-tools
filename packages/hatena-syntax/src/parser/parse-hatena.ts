@@ -190,17 +190,17 @@ export function parseInline(
           continue;
         }
 
-        // Amazon ASIN 埋め込み
-        const asinMatch =
-          /^asin:([a-zA-Z0-9]{10})(?::(detail|image|title))?$/.exec(
+        // Amazon ASIN / ISBN 埋め込み
+        const asinOrIsbnMatch =
+          /^(asin|isbn):([a-zA-Z0-9-]{10,17})(?::(detail|image|title))?$/.exec(
             bracketInner,
           );
-        if (asinMatch?.[1]) {
+        if (asinOrIsbnMatch?.[1] && asinOrIsbnMatch[2]) {
           nodes.push({
             type: 'embed',
-            provider: 'asin',
-            id: asinMatch[1],
-            ...(asinMatch[2] ? { option: asinMatch[2] } : {}),
+            provider: asinOrIsbnMatch[1] as 'asin' | 'isbn',
+            id: asinOrIsbnMatch[2],
+            ...(asinOrIsbnMatch[3] ? { option: asinOrIsbnMatch[3] } : {}),
           });
           index += closeIdx + 1;
           continue;
@@ -281,6 +281,27 @@ export function parseInline(
       }
     }
 
+    // 5.7. 角括弧なしの asin / isbn 記法
+    if (
+      (rest.startsWith('asin:') || rest.startsWith('isbn:')) &&
+      (index === 0 || !/[a-zA-Z0-9_:-]/.test(text[index - 1] ?? ''))
+    ) {
+      const bareBookMatch =
+        /^(asin|isbn):([a-zA-Z0-9-]{10,17})(?::(detail|image|title))?/.exec(
+          rest,
+        );
+      if (bareBookMatch?.[1] && bareBookMatch[2]) {
+        nodes.push({
+          type: 'embed',
+          provider: bareBookMatch[1] as 'asin' | 'isbn',
+          id: bareBookMatch[2],
+          ...(bareBookMatch[3] ? { option: bareBookMatch[3] } : {}),
+        });
+        index += bareBookMatch[0].length;
+        continue;
+      }
+    }
+
     // 6. 裸の URL（autoLink 有効時）
     if (
       ctx.autoLink &&
@@ -299,7 +320,7 @@ export function parseInline(
     }
 
     // 通常の1文字を進む（次の特殊トークン開始文字までまとめて進める）
-    const nextSpecial = rest.slice(1).search(/[([`*~hf<i]/);
+    const nextSpecial = rest.slice(1).search(/[([`*~hf<ia]/);
     if (nextSpecial === -1) {
       pushText(rest);
       break;

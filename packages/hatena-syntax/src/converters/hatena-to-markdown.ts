@@ -63,7 +63,7 @@ function renderInlineNode(node: HatenaInlineNode): string {
       if (node.provider === 'hatenaId') {
         return `[id:${node.id}](https://blog.hatena.ne.jp/${node.id}/)`;
       }
-      return `https://www.amazon.co.jp/dp/${node.id}`;
+      return `https://www.amazon.co.jp/dp/${node.id.replace(/-/g, '')}`;
     case 'tex':
       return `$${node.value}$`;
     case 'footnote':

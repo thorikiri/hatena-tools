@@ -175,8 +175,12 @@ function renderInlineNode(
         }
         return `<a href="${escapeHtml(profileUrl)}" class="hatena-id-link">id:${escapeHtml(node.id)}</a>`;
       }
-      const amazonUrl = `https://www.amazon.co.jp/dp/${encodeURIComponent(node.id)}`;
-      return `<a href="${escapeHtml(amazonUrl)}" class="hatena-asin-link">ASIN: ${escapeHtml(node.id)}</a>`;
+      const normalizedId = node.id.replace(/-/g, '');
+      const amazonUrl = `https://www.amazon.co.jp/dp/${encodeURIComponent(normalizedId)}`;
+      const labelPrefix = node.provider === 'isbn' ? 'ISBN' : 'ASIN';
+      const className =
+        node.provider === 'isbn' ? 'hatena-isbn-link' : 'hatena-asin-link';
+      return `<a href="${escapeHtml(amazonUrl)}" class="${className}">${labelPrefix}: ${escapeHtml(node.id)}</a>`;
     }
     case 'tex':
       return `<span class="hatena-tex" data-tex="${escapeHtml(node.value)}">\\(${escapeHtml(node.value)}\\)</span>`;

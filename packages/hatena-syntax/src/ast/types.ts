@@ -33,7 +33,7 @@ export type HatenaInlineNode =
   | ({ type: 'photo' } & HatenaPhotoInfo)
   | {
       type: 'embed';
-      provider: 'youtube' | 'twitter' | 'asin' | 'hatenaId';
+      provider: 'youtube' | 'twitter' | 'asin' | 'isbn' | 'hatenaId';
       id: string;
       option?: string;
     }
