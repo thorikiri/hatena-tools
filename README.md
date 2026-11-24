@@ -7,7 +7,7 @@
 | パッケージ名                                                             | ディレクトリ                 | 概要                                            |
 | ------------------------------------------------------------------------ | ---------------------------- | ----------------------------------------------- |
 | [`@thorikiri/hatena-api-client`](./packages/hatena-api-client/README.md) | `packages/hatena-api-client` | はてなブログ・はてなサービス向けAPIクライアント |
-| `@thorikiri/hatena-syntax`                                               | `packages/hatena-syntax`     | はてな記法パーサーおよびコンバーター            |
+| [`@thorikiri/hatena-syntax`](./packages/hatena-syntax/README.md)         | `packages/hatena-syntax`     | はてな記法パーサーおよびコンバーター            |
 
 ## ディレクトリ構成
 

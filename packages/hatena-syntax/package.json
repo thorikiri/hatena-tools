@@ -1,8 +1,34 @@
 {
   "name": "@thorikiri/hatena-syntax",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "はてな記法パーサーおよびコンバーター",
+  "license": "MIT",
+  "author": "@thorikiri",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thorikiri/hatena-tools.git",
+    "directory": "packages/hatena-syntax"
+  },
+  "homepage": "https://github.com/thorikiri/hatena-tools/tree/main/packages/hatena-syntax#readme",
+  "bugs": {
+    "url": "https://github.com/thorikiri/hatena-tools/issues"
+  },
+  "keywords": [
+    "hatena",
+    "hatena-blog",
+    "hatena-syntax",
+    "hatena-fotolife",
+    "markdown",
+    "html",
+    "parser",
+    "ast",
+    "typescript"
+  ],
   "type": "module",
+  "sideEffects": false,
+  "engines": {
+    "node": ">=22.0.0"
+  },
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
