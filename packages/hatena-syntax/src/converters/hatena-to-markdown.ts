@@ -75,6 +75,9 @@ function renderInlineNode(node: HatenaInlineNode): string {
               : '';
         return `[google:${node.id}](https://www.google.com/search?${tbm}q=${encodeURIComponent(node.id)})`;
       }
+      if (node.provider === 'wikipedia') {
+        return `[wikipedia:${node.id}](https://ja.wikipedia.org/wiki/${encodeURIComponent(node.id)})`;
+      }
       return `https://www.amazon.co.jp/dp/${node.id.replace(/-/g, '')}`;
     case 'tex':
       return `$${node.value}$`;
