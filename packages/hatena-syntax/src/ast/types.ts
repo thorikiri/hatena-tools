@@ -39,7 +39,8 @@ export type HatenaInlineNode =
         | 'asin'
         | 'isbn'
         | 'hatenaId'
-        | 'question';
+        | 'question'
+        | 'google';
       id: string;
       option?: string;
     }
