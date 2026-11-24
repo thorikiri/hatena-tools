@@ -60,6 +60,9 @@ function renderInlineNode(node: HatenaInlineNode): string {
       if (node.provider === 'twitter') {
         return `https://twitter.com/i/status/${node.id}`;
       }
+      if (node.provider === 'hatenaId') {
+        return `[id:${node.id}](https://blog.hatena.ne.jp/${node.id}/)`;
+      }
       return `https://www.amazon.co.jp/dp/${node.id}`;
     case 'tex':
       return `$${node.value}$`;

@@ -167,6 +167,14 @@ function renderInlineNode(
         const tweetUrl = `https://twitter.com/i/status/${encodeURIComponent(node.id)}`;
         return `<blockquote class="twitter-tweet"><a href="${escapeHtml(tweetUrl)}">${escapeHtml(tweetUrl)}</a></blockquote>`;
       }
+      if (node.provider === 'hatenaId') {
+        const profileUrl = `https://blog.hatena.ne.jp/${encodeURIComponent(node.id)}/`;
+        if (node.option?.startsWith('image')) {
+          const iconUrl = `https://cdn.profile-image.st-hatena.com/users/${encodeURIComponent(node.id)}/profile.png`;
+          return `<a href="${escapeHtml(profileUrl)}" class="hatena-id-link"><img src="${escapeHtml(iconUrl)}" alt="id:${escapeHtml(node.id)}" class="hatena-id-icon" /></a>`;
+        }
+        return `<a href="${escapeHtml(profileUrl)}" class="hatena-id-link">id:${escapeHtml(node.id)}</a>`;
+      }
       const amazonUrl = `https://www.amazon.co.jp/dp/${encodeURIComponent(node.id)}`;
       return `<a href="${escapeHtml(amazonUrl)}" class="hatena-asin-link">ASIN: ${escapeHtml(node.id)}</a>`;
     }
