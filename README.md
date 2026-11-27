@@ -91,3 +91,22 @@ npm run format
 ## ライセンス
 
 [MIT](./LICENSE)
+
+## AI エージェント向け SKILL の導入
+
+本リポジトリは [Agent Skills 仕様](https://agentskills.io/) に準拠した `SKILL.md` を [`skills/`](./skills/) 配下に同梱しています。
+
+### `npx skills` CLI で導入する場合（推奨）
+
+```bash
+# 両方のスキルをインストール
+npx skills add thorikiri/hatena-tools
+
+# 特定のスキルだけをインストールする場合
+npx skills add thorikiri/hatena-tools --skill hatena-syntax
+npx skills add thorikiri/hatena-tools --skill hatena-api-client
+```
+
+### Antigravity / 手動で配置する場合
+
+プロジェクトの `.agents/skills/`（またはグローバルの `~/.gemini/config/skills/`）へ [`skills/hatena-api-client`](./skills/hatena-api-client/SKILL.md) または [`skills/hatena-syntax`](./skills/hatena-syntax/SKILL.md) をコピー／シンボリックリンクして利用できます。
