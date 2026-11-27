@@ -27,11 +27,11 @@ export class HatenaClient {
   /** はてなスター API クライアント */
   public readonly star: HatenaStarClient;
 
-  constructor(options: HatenaClientOptions) {
+  constructor(options: HatenaClientOptions = {}) {
     this.http = new HatenaFetchClient(options);
     const defaultHatenaId =
       options.hatenaId ??
-      (options.auth.type === 'wsse' ? options.auth.hatenaId : undefined);
+      (options.auth?.type === 'wsse' ? options.auth.hatenaId : undefined);
     this.user = new HatenaUserClient(this.http, {
       hatenaId: defaultHatenaId,
       timeoutMs: options.timeoutMs,

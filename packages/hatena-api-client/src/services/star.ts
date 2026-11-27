@@ -126,7 +126,7 @@ export async function fetchHatenaStarBlogCount(
   const trimmed = blogUrl.trim();
   if (!trimmed) {
     throw new HatenaApiError('対象ブログ URL が指定されていません。', {
-      code: 'API_ERROR',
+      code: 'VALIDATION_ERROR',
     });
   }
 
@@ -191,7 +191,7 @@ export function getHatenaStarCountImageUrl(
   const trimmedUri = options.uri.trim();
   if (!trimmedUri) {
     throw new HatenaApiError('対象 URI が指定されていません。', {
-      code: 'API_ERROR',
+      code: 'VALIDATION_ERROR',
     });
   }
 

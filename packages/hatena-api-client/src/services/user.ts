@@ -36,7 +36,7 @@ export function getHatenaProfileImageUrl(
   const trimmed = hatenaId.trim();
   if (!trimmed) {
     throw new HatenaApiError('hatenaId が指定されていません。', {
-      code: 'API_ERROR',
+      code: 'VALIDATION_ERROR',
     });
   }
 

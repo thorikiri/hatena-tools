@@ -57,6 +57,15 @@ const hatena = new HatenaClient({
 });
 ```
 
+### 公開エンドポイントのみ利用する場合（認証不要）
+
+`auth` を省略して `new HatenaClient()`（必要に応じて `hatenaId` / `blogId` を指定）で初期化し、公開フィード・ブックマーク件数・スター API を利用できます。
+
+```ts
+const publicClient = new HatenaClient({ hatenaId: 'your-hatena-id' });
+const hot = await publicClient.bookmark.getHotEntries({ category: 'it' });
+```
+
 ### 3-legged OAuth 1.0a 認可フロー (`HatenaOAuth1`)
 
 ```ts
@@ -136,20 +145,29 @@ const credentials = await oauth.getAccessToken({
 
 ## エラーハンドリング
 
-すべてのエラーは `HatenaApiError` に正規化されます。
+すべてのエラーは `HatenaApiError` に正規化されます。通信前の引数不正（`VALIDATION_ERROR`）や URL 不正（`INVALID_URL`）は `isClientValidationError` で判定できます。
 
 ```ts
-import { HatenaApiError } from '@thorikiri/hatena-api-client';
+import {
+  HatenaApiError,
+  isClientValidationError,
+} from '@thorikiri/hatena-api-client';
 
 try {
   await hatena.user.getMe();
 } catch (error) {
-  if (error instanceof HatenaApiError) {
-    // error.code: 'UNAUTHORIZED' | 'FORBIDDEN' | 'NOT_FOUND' | 'RATE_LIMITED' | 'TIMEOUT' | 'NETWORK_ERROR' | 'INVALID_URL' | 'API_ERROR'
+  if (isClientValidationError(error)) {
+    // 'VALIDATION_ERROR' | 'INVALID_URL'
+  } else if (error instanceof HatenaApiError) {
+    // 'UNAUTHORIZED' | 'FORBIDDEN' | 'NOT_FOUND' | 'RATE_LIMITED' | 'TIMEOUT' | 'NETWORK_ERROR' | 'API_ERROR'
     console.error(error.code, error.status, error.message);
   }
 }
 ```
+
+## テスト時のモック
+
+`createMockHatenaClient(overrides?)` と `HatenaClientLike` 型を利用して、必要なメソッドだけを差し替えたモックを生成できます。
 
 ## 実装時の注意点
 
