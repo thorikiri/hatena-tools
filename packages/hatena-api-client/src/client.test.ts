@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { HatenaClient } from './client.js';
-import { HatenaApiError } from './errors.js';
+import { HatenaApiError, isClientValidationError } from './errors.js';
+import { createMockHatenaClient } from './testing.js';
 
 describe('HatenaClient', () => {
   it('OAuth 1.0a 認証で user.getMe() がユーザー情報を取得できること', async () => {
@@ -95,5 +96,52 @@ describe('HatenaClient', () => {
         expect((error as HatenaApiError).responseBody).toBe('error body');
       }
     }
+  });
+
+  it('auth なしで初期化して公開エンドポイントを利用でき、認証必須 API 呼び出し時は UNAUTHORIZED になること', async () => {
+    const fetchMock = vi
+      .fn<typeof globalThis.fetch>()
+      .mockResolvedValue(new Response('42', { status: 200 }));
+
+    const client = new HatenaClient({
+      hatenaId: 'taro',
+      fetch: fetchMock,
+    });
+
+    const count = await client.bookmark.getCount({
+      url: 'https://example.com',
+    });
+    expect(count).toBe(42);
+
+    await expect(client.user.getMe()).rejects.toMatchObject({
+      code: 'UNAUTHORIZED',
+    });
+  });
+
+  it('引数バリデーションエラーは VALIDATION_ERROR となり isClientValidationError で判定できること', async () => {
+    const client = new HatenaClient();
+    try {
+      await client.fotolife.deletePhoto('not-a-valid-photo-id');
+      expect.unreachable();
+    } catch (error) {
+      expect(error).toBeInstanceOf(HatenaApiError);
+      expect((error as HatenaApiError).code).toBe('VALIDATION_ERROR');
+      expect(isClientValidationError(error)).toBe(true);
+    }
+  });
+
+  it('createMockHatenaClient で任意のメソッドを差し替えでき、未実装メソッドは明示エラーになること', async () => {
+    const mockClient = createMockHatenaClient({
+      blog: {
+        getEntry: vi.fn().mockResolvedValue({ entryId: '1', title: 'Mock' }),
+      },
+    });
+
+    const entry = await mockClient.blog.getEntry({ entryId: '1' });
+    expect(entry.title).toBe('Mock');
+
+    expect(() => mockClient.user.getMe()).toThrow(
+      '[MockHatenaClient] Unimplemented method called: user.getMe',
+    );
   });
 });

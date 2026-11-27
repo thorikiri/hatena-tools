@@ -27,12 +27,12 @@ const DEFAULT_TIMEOUT_MS = 15_000;
  * Web 標準 fetch をベースとした共通 HTTP クライアント
  */
 export class HatenaFetchClient {
-  private readonly auth: HatenaAuthConfig;
+  private readonly auth?: HatenaAuthConfig;
   private readonly defaultTimeoutMs: number;
   private readonly defaultRetry: ResolvedRetryConfig;
   private readonly fetchImpl: typeof globalThis.fetch;
 
-  constructor(options: HatenaClientOptions) {
+  constructor(options: HatenaClientOptions = {}) {
     this.auth = options.auth;
     this.defaultTimeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
     this.defaultRetry = resolveRetryConfig(options.retry);
@@ -129,6 +129,13 @@ export class HatenaFetchClient {
         options.body instanceof Uint8Array
           ? new Uint8Array(options.body)
           : options.body;
+    }
+
+    if (!this.auth) {
+      throw new HatenaApiError(
+        '認証設定 (auth) が指定されていません。認証が必要な API を呼び出す場合は OAuth 1.0a または WSSE 認証を設定してください。',
+        { code: 'UNAUTHORIZED' },
+      );
     }
 
     if (this.auth.type === 'oauth1') {

@@ -44,7 +44,7 @@ export function resolveFotolifeEditUrl(
     const trimmed = target.trim();
     if (!trimmed) {
       throw new HatenaApiError('削除対象の写真IDまたはURLを指定してください', {
-        code: 'API_ERROR',
+        code: 'VALIDATION_ERROR',
       });
     }
 
@@ -71,7 +71,7 @@ export function resolveFotolifeEditUrl(
 
     throw new HatenaApiError(
       '削除対象の写真ID（Edit URI）を特定できませんでした',
-      { code: 'API_ERROR' },
+      { code: 'VALIDATION_ERROR' },
     );
   }
 
@@ -87,7 +87,7 @@ export function resolveFotolifeEditUrl(
     const id = target.photoId.trim();
     if (!/^\d+$/.test(id)) {
       throw new HatenaApiError('不正な photoId が指定されました', {
-        code: 'API_ERROR',
+        code: 'VALIDATION_ERROR',
       });
     }
     return buildEditUrlFromPhotoId(id);

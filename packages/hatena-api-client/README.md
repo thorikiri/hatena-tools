@@ -71,6 +71,16 @@ const hatenaWsse = new HatenaClient({
   },
   blogId: 'example.hatenablog.com',
 });
+
+// 認証不要な公開エンドポイントのみ利用する場合（auth 省略可能）
+const publicHatena = new HatenaClient({
+  hatenaId: 'your-hatena-id', // getMyFeed 等で省略したい場合に指定
+  blogId: 'example.hatenablog.com', // getPublicFeed 等で省略したい場合に指定
+});
+const hotEntries = await publicHatena.bookmark.getHotEntries({
+  category: 'it',
+});
+const myRss = await publicHatena.bookmark.getMyFeed({ page: 1 });
 ```
 
 ### OAuth 1.0a 認可フロー（3-legged）
@@ -298,19 +308,46 @@ const starImg = await fetchHatenaStarCountImage({
 
 ## エラーハンドリング
 
-すべての API エラーは `HatenaApiError` に正規化されます。
+すべての API エラー・バリデーションエラーは `HatenaApiError` に正規化されます。通信前の引数不正や URL 不正（`VALIDATION_ERROR` / `INVALID_URL`）は `isClientValidationError` でまとめて判定できます。
 
 ```ts
-import { HatenaApiError } from '@thorikiri/hatena-api-client';
+import {
+  HatenaApiError,
+  isClientValidationError,
+} from '@thorikiri/hatena-api-client';
 
 try {
   await hatena.user.getMe();
 } catch (error) {
-  if (error instanceof HatenaApiError) {
-    // error.code: 'UNAUTHORIZED' | 'FORBIDDEN' | 'NOT_FOUND' | 'RATE_LIMITED' | 'TIMEOUT' | 'NETWORK_ERROR' | 'INVALID_URL' | 'API_ERROR'
+  if (isClientValidationError(error)) {
+    // 入力エラー（HTTP 400 相当）: 'VALIDATION_ERROR' | 'INVALID_URL'
+    console.warn('Invalid input:', error);
+  } else if (error instanceof HatenaApiError) {
+    // API 通信・認可エラー: 'UNAUTHORIZED' | 'FORBIDDEN' | 'NOT_FOUND' | 'RATE_LIMITED' | 'TIMEOUT' | 'NETWORK_ERROR' | 'API_ERROR'
     console.error(error.code, error.status, error.message);
   }
 }
+```
+
+## テスト時のモック支援
+
+`HatenaClientLike` 型と `createMockHatenaClient` ヘルパーを使うことで、アプリケーション側のユニット・結合テストでサービス単位のスタブを簡潔に作成できます。
+
+```ts
+import {
+  createMockHatenaClient,
+  type HatenaClientLike,
+} from '@thorikiri/hatena-api-client';
+
+const mockClient: HatenaClientLike = createMockHatenaClient({
+  blog: {
+    createEntry: async (opts) => ({
+      entryId: 'mock-id',
+      title: opts.title,
+      // ...
+    }),
+  },
+});
 ```
 
 ## ライセンス

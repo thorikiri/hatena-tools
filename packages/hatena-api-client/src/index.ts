@@ -19,6 +19,7 @@ export {
   HatenaApiError,
   type HatenaApiErrorCode,
   type HatenaApiErrorOptions,
+  isClientValidationError,
   isTimeoutError,
   statusToErrorCode,
 } from './errors.js';
@@ -78,6 +79,17 @@ export {
   HatenaUserClient,
   type HatenaUserClientOptions,
 } from './services/user.js';
+export {
+  createMockHatenaClient,
+  type HatenaBlogClientLike,
+  type HatenaBookmarkClientLike,
+  type HatenaClientLike,
+  type HatenaClientMockOverrides,
+  type HatenaFotolifeClientLike,
+  type HatenaStarClientLike,
+  type HatenaUserClientLike,
+  type PublicInterface,
+} from './testing.js';
 export type {
   AddHatenaBookmarkOptions,
   BuildHatenaEntryXmlOptions,

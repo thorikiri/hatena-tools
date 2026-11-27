@@ -108,7 +108,7 @@ export async function fetchHatenaBlogOEmbed(
   const trimmedUrl = url.trim();
   if (!trimmedUrl) {
     throw new HatenaApiError('対象の記事 URL が指定されていません。', {
-      code: 'API_ERROR',
+      code: 'VALIDATION_ERROR',
     });
   }
 
@@ -206,13 +206,13 @@ export class HatenaBlogClient {
     if (!hatenaId) {
       throw new HatenaApiError(
         'hatenaId が指定されていません。HatenaClient の初期化時またはメソッド引数で指定してください。',
-        { code: 'API_ERROR' },
+        { code: 'VALIDATION_ERROR' },
       );
     }
     if (!blogId) {
       throw new HatenaApiError(
         'blogId が指定されていません。HatenaClient の初期化時またはメソッド引数で指定してください。',
-        { code: 'API_ERROR' },
+        { code: 'VALIDATION_ERROR' },
       );
     }
 
@@ -235,7 +235,7 @@ export class HatenaBlogClient {
     const trimmedId = id.trim();
     if (!trimmedId) {
       throw new HatenaApiError(`${resource}Id が指定されていません。`, {
-        code: 'API_ERROR',
+        code: 'VALIDATION_ERROR',
       });
     }
     return `${this.buildCollectionUrl(resource, options)}/${encodeURIComponent(trimmedId)}`;
@@ -553,7 +553,7 @@ export class HatenaBlogClient {
     const target = (options?.blogUrl ?? this.defaults.blogId ?? '').trim();
     if (!target) {
       throw new HatenaApiError('blogUrl または blogId が指定されていません。', {
-        code: 'API_ERROR',
+        code: 'VALIDATION_ERROR',
       });
     }
 

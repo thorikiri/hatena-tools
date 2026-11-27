@@ -208,7 +208,7 @@ export async function fetchHatenaBookmarkCount(
   const trimmed = url.trim();
   if (!trimmed) {
     throw new HatenaApiError('対象 URL が指定されていません。', {
-      code: 'API_ERROR',
+      code: 'VALIDATION_ERROR',
     });
   }
   const endpoint = `${BOOKMARK_COUNT_SINGLE_URL}?url=${encodeURIComponent(trimmed)}`;
@@ -231,7 +231,7 @@ export async function fetchHatenaBookmarkCounts(
   if (normalized.length > MAX_COUNT_URLS) {
     throw new HatenaApiError(
       `一度に指定できる URL は最大 ${MAX_COUNT_URLS} 件までです。`,
-      { code: 'API_ERROR' },
+      { code: 'VALIDATION_ERROR' },
     );
   }
 
@@ -251,7 +251,7 @@ export async function fetchHatenaBookmarkEntryInfo(
   const trimmed = url.trim();
   if (!trimmed) {
     throw new HatenaApiError('対象 URL が指定されていません。', {
-      code: 'API_ERROR',
+      code: 'VALIDATION_ERROR',
     });
   }
 
@@ -315,7 +315,7 @@ export async function fetchHatenaBookmarkCommentOEmbed(
   const trimmed = url.trim();
   if (!trimmed) {
     throw new HatenaApiError('対象のコメント URL が指定されていません。', {
-      code: 'API_ERROR',
+      code: 'VALIDATION_ERROR',
     });
   }
 
@@ -361,7 +361,7 @@ export class HatenaBookmarkClient {
     if (!hatenaId) {
       throw new HatenaApiError(
         'hatenaId が指定されていません。HatenaClient の初期化時またはメソッド引数で指定してください。',
-        { code: 'API_ERROR' },
+        { code: 'VALIDATION_ERROR' },
       );
     }
     return hatenaId;
@@ -606,7 +606,7 @@ export class HatenaBookmarkClient {
       throw new HatenaApiError(
         'お気に入りフィードの key が指定されていません。',
         {
-          code: 'API_ERROR',
+          code: 'VALIDATION_ERROR',
         },
       );
     }

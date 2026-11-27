@@ -9,6 +9,7 @@ export type HatenaApiErrorCode =
   | 'TIMEOUT'
   | 'NETWORK_ERROR'
   | 'INVALID_URL'
+  | 'VALIDATION_ERROR'
   | 'API_ERROR';
 
 /**
@@ -62,5 +63,15 @@ export function isTimeoutError(error: unknown): boolean {
   return (
     typeof err.message === 'string' &&
     /timeout|timed out|abort/i.test(err.message)
+  );
+}
+
+/**
+ * 通信前のクライアント入力・URL バリデーションエラーかを判定する
+ */
+export function isClientValidationError(error: unknown): boolean {
+  return (
+    error instanceof HatenaApiError &&
+    (error.code === 'VALIDATION_ERROR' || error.code === 'INVALID_URL')
   );
 }

@@ -36,8 +36,8 @@ export interface HatenaRetryOptions {
  * HatenaClient の初期化オプション
  */
 export interface HatenaClientOptions {
-  /** 認証設定（OAuth 1.0a または WSSE） */
-  auth: HatenaAuthConfig;
+  /** 認証設定（OAuth 1.0a または WSSE）。公開エンドポイントのみ利用する場合は省略可能 */
+  auth?: HatenaAuthConfig;
   /** デフォルトのはてなID（WSSEの場合はauth.hatenaIdをフォールバックとして使用） */
   hatenaId?: string;
   /** デフォルトのはてなブログID（例: example.hatenablog.com） */
